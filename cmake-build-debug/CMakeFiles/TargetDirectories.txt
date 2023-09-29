@@ -1,0 +1,3 @@
+/Users/grigorij/Documents/university/misp/course2/Village_game/Village/cmake-build-debug/CMakeFiles/Village.dir
+/Users/grigorij/Documents/university/misp/course2/Village_game/Village/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/grigorij/Documents/university/misp/course2/Village_game/Village/cmake-build-debug/CMakeFiles/rebuild_cache.dir
