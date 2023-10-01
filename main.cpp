@@ -6,6 +6,7 @@ int main() {
     const int screenHeight = 650;
     InitWindow(screenWidth, screenHeight, "raylib [core] example - keyboard input");
     Texture2D man = LoadTexture("../chel.png");
+    Texture2D grass = LoadTexture("../grass.png");
 
     auto frameWidth = (float)(man.width / 4);
     auto frameHeight = (float)(man.height / 4);
@@ -14,6 +15,12 @@ int main() {
     int currentFrame = 0;
     int framesCounter = 0;
     int framesSpeed = 4;
+
+    Camera2D camera = {0};
+    camera.target = position;
+    camera.offset = Vector2{(float)(screenWidth/2), (float)screenHeight/2};
+    camera.rotation = 0.0f;
+    camera.zoom = 1.0f;
     SetTargetFPS(60);
 
     while (!WindowShouldClose())
@@ -75,13 +82,23 @@ int main() {
             }
             position.y += 3.0f;
         }
+        camera.target = position;
         BeginDrawing();
         ClearBackground(RAYWHITE);
+        for (float x = (float)screenWidth/2 - position.x; x < screenWidth; x += 200) {
+            for (float y = (float)screenHeight/2 - position.y; y < screenHeight; y += 200) {
+                DrawTexturePro(grass, Rectangle{0.0f, 0.0f, (float)grass.width, (float)grass.height}, Rectangle{(float)x, (float)y, 200, 200}, Vector2{0,0}, 0.0f, WHITE);
+            }
+        }
         DrawFPS(10, 10);
-        DrawTexturePro(man, frameRec, Rectangle{position.x,position.y, 100, 100}, Vector2{0,0}, 0.0f, WHITE);
+        DrawRectangle(screenWidth/2.0f+500 - position.x, screenHeight/2.0f+500 - position.y, 80, 80, RED);
+        BeginMode2D(camera);
+        DrawTexturePro(man, frameRec, Rectangle{position.x,position.y, 70, 70}, Vector2{0,0}, 0.0f, WHITE);
+        EndMode2D();
         EndDrawing();
     }
     UnloadTexture(man);
+    UnloadTexture(grass);
     CloseWindow();
     return 0;
 }
