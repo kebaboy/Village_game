@@ -21,6 +21,9 @@ int main() {
     camera.offset = Vector2{(float)(screenWidth/2), (float)screenHeight/2};
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
+
+    Vector2 mousePoint = {0.0f, 0.0f};
+    Rectangle button = {screenWidth - 100.0f, screenHeight - 100.0f, 80, 80};
     SetTargetFPS(60);
 
     while (!WindowShouldClose())
@@ -83,6 +86,12 @@ int main() {
             position.y += 3.0f;
         }
         camera.target = position;
+
+        mousePoint = GetMousePosition();
+
+        if (CheckCollisionPointRec(mousePoint, button)) {
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) std::cout << "Hello\n";
+        }
         BeginDrawing();
         ClearBackground(RAYWHITE);
         for (float x = (float)screenWidth/2 - position.x; x < screenWidth; x += 200) {
@@ -92,6 +101,7 @@ int main() {
         }
         DrawFPS(10, 10);
         DrawRectangle(screenWidth/2.0f+500 - position.x, screenHeight/2.0f+500 - position.y, 80, 80, RED);
+        DrawRectangleRec(button, BROWN);
         BeginMode2D(camera);
         DrawTexturePro(man, frameRec, Rectangle{position.x,position.y, 70, 70}, Vector2{0,0}, 0.0f, WHITE);
         EndMode2D();
