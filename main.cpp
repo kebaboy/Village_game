@@ -42,6 +42,15 @@ int main() {
     Rectangle houseRec = {400, 200, 80, 80};
     bool textureDrawn = false;
 
+
+    Vector2 npcPositon = {100, 100};
+    Vector2 pointA = {400, 200};
+    Vector2 pointB = {600, 600};
+    float npsSpeed = 0.005f;
+    float npcT = 0.0f;
+    bool npcMovingToB = true;
+    float delayTime = 0.0f;
+    float maxDelayTime = 3.0f;
     SetTargetFPS(60);
 
     while (!WindowShouldClose())
@@ -58,7 +67,7 @@ int main() {
 
                 frameRec.x = (float)currentFrame*frameWidth;
             }
-            position.x += 2.0f;
+            position.x += 3.0f;
         }
         if (IsKeyDown(KEY_LEFT)) {
             if (frameRec.y != frameHeight * 2) frameRec.y = frameHeight * 2;
@@ -72,7 +81,7 @@ int main() {
 
                 frameRec.x = (float)currentFrame*frameWidth;
             }
-            position.x -= 2.0f;
+            position.x -= 3.0f;
         }
         if (IsKeyDown(KEY_UP)) {
             if (frameRec.y != frameHeight * 3) frameRec.y = frameHeight * 3;
@@ -86,7 +95,7 @@ int main() {
 
                 frameRec.x = (float)currentFrame*frameWidth;
             }
-            position.y -= 2.0f;
+            position.y -= 3.0f;
         }
         if (IsKeyDown(KEY_DOWN)) {
             if (frameRec.y != 0.0f) frameRec.y = 0.0f;
@@ -100,7 +109,7 @@ int main() {
 
                 frameRec.x = (float)currentFrame*frameWidth;
             }
-            position.y += 2.0f;
+            position.y += 3.0f;
         }
         camera.target = position;
 
@@ -112,6 +121,27 @@ int main() {
             textureDrawn = true;
         }
 
+        if (textureDrawn) {
+            if (npcMovingToB) {
+                npcT += npsSpeed;
+                if (npcT >= 1.0f) {
+                    npcT = 1.0f;
+                    delayTime += GetFrameTime();
+                    if (delayTime >= maxDelayTime) {
+                        npcMovingToB = false;
+                        delayTime = 0.0f;
+                    }
+                }
+            } else {
+                npcT -= npsSpeed;
+                if (npcT <= 0.0f) {
+                    npcT = 0.0f;
+                    npcMovingToB = true;
+                }
+            }
+            npcPositon.x = (1 - npcT) * pointA.x + npcT * pointB.x;
+            npcPositon.y = (1 - npcT) * pointA.y + npcT * pointB.y;
+        }
 
 
 
@@ -135,10 +165,15 @@ int main() {
                 }
             }
         }
+        DrawRectangle(pointB.x, pointB.y, 70, 70, GREEN);
         if (textureDrawn == false) DrawRectangle(400, 200, 80, 80, RED);
-        else DrawTexturePro(house, Rectangle{0.0f, 0.0f, (float)house.width, (float)house.height}, Rectangle{houseRec.x - 60, houseRec.y - 100, houseRec.width + 100, houseRec.height + 100}, Vector2{0,0}, 0.0f, WHITE);
+        else {
+            DrawTexturePro(house, Rectangle{0.0f, 0.0f, (float) house.width, (float) house.height},
+                           Rectangle{houseRec.x - 60, houseRec.y - 100, houseRec.width + 100, houseRec.height + 100},
+                           Vector2{0, 0}, 0.0f, WHITE);
+            DrawTexturePro(man, frameRec, Rectangle{npcPositon.x,npcPositon.y, 70, 70}, Vector2{0,0}, 0.0f, WHITE);
+        }
         DrawTexturePro(man, frameRec, Rectangle{position.x,position.y, 70, 70}, Vector2{0,0}, 0.0f, WHITE);
-
         EndMode2D();
         DrawRectangleRec(button, BROWN);
         DrawFPS(10, 10);
