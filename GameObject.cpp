@@ -7,33 +7,44 @@
 
 ResourceManager resourceManager;
 
-GameObject::GameObject(const Vector2 pos): _position(pos) {
+GameObject::GameObject(const Vector2 pos, const Vector2 size): _position(pos), _size(size) {
 
 }
 
-void GameObject::Draw() {
-    DrawTexture(_sprite, _position.x, _position.y, WHITE);
+void GameObject::Draw() const {
+    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
 }
 
 void GameObject::Update() {};
 
-Vector2 GameObject::GetPositon() const {
+const Vector2& GameObject::GetPositon() const {
     return _position;
 }
 
-void GameObject::SetTexture(const Texture2D &texture) {
+const Vector2& GameObject::GetSize() const {
+    return _size;
+}
+
+void GameObject::SetTexture(const Texture2D& texture) {
     _sprite = texture;
 }
 
-Player::Player(const Vector2 pos) : GameObject(pos) {}
-
-void Player::Update() {
-    if (IsKeyDown(KEY_RIGHT)) _position.x += _playerVelocity;
-    if (IsKeyDown(KEY_LEFT)) _position.x -= _playerVelocity;
-    if (IsKeyDown(KEY_UP)) _position.y -= _playerVelocity;
-    if (IsKeyDown(KEY_DOWN)) _position.y += _playerVelocity;
+void GameObject::SetPosition(Vector2 position) {
+    _position = position;
 }
 
-void Player::Draw() {
-    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width/4, (float)_sprite.height/4}, Rectangle{_position.x,_position.y, 70, 70}, Vector2{0,0}, 0.0f, WHITE);
+Player::Player(const Vector2 pos, const Vector2 size) : GameObject(pos, size) {}
+
+void Player::Draw() const {
+    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width/4, (float)_sprite.height/4}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
 }
+
+const float Player::GetVelocity() const {
+    return _playerVelocity;
+}
+
+House::House(const Vector2 pos, const Vector2 size, const Texture2D sprite): GameObject(pos, size) {_sprite = sprite;}
+
+//void House::DrawOpacity() const {
+//    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{GetMousePosition().x, GetMousePosition().y, _size.x, _size.y}, Vector2{0,0}, 0.0f, Fade(WHITE, 0.5f));
+//}

@@ -77,6 +77,20 @@ build CMakeFiles/Village.dir/GameObject.cpp.o: CXX_COMPILER__Village_unscanned_D
   OBJECT_DIR = CMakeFiles/Village.dir
   OBJECT_FILE_DIR = CMakeFiles/Village.dir
 
+build CMakeFiles/Village.dir/UI.cpp.o: CXX_COMPILER__Village_unscanned_Debug /Users/grigorij/Documents/university/misp/course2/Village_game/Village/UI.cpp || cmake_object_order_depends_target_Village
+  DEP_FILE = CMakeFiles/Village.dir/UI.cpp.o.d
+  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.0.sdk -mmacosx-version-min=13.6 -fcolor-diagnostics
+  INCLUDES = -isystem /opt/homebrew/include
+  OBJECT_DIR = CMakeFiles/Village.dir
+  OBJECT_FILE_DIR = CMakeFiles/Village.dir
+
+build CMakeFiles/Village.dir/UIElement.cpp.o: CXX_COMPILER__Village_unscanned_Debug /Users/grigorij/Documents/university/misp/course2/Village_game/Village/UIElement.cpp || cmake_object_order_depends_target_Village
+  DEP_FILE = CMakeFiles/Village.dir/UIElement.cpp.o.d
+  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.0.sdk -mmacosx-version-min=13.6 -fcolor-diagnostics
+  INCLUDES = -isystem /opt/homebrew/include
+  OBJECT_DIR = CMakeFiles/Village.dir
+  OBJECT_FILE_DIR = CMakeFiles/Village.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target Village
@@ -85,7 +99,7 @@ build CMakeFiles/Village.dir/GameObject.cpp.o: CXX_COMPILER__Village_unscanned_D
 #############################################
 # Link the executable Village
 
-build Village: CXX_EXECUTABLE_LINKER__Village_Debug CMakeFiles/Village.dir/main.cpp.o CMakeFiles/Village.dir/Game.cpp.o CMakeFiles/Village.dir/ResourceManager.cpp.o CMakeFiles/Village.dir/GameObject.cpp.o | /opt/homebrew/lib/libraylib.dylib
+build Village: CXX_EXECUTABLE_LINKER__Village_Debug CMakeFiles/Village.dir/main.cpp.o CMakeFiles/Village.dir/Game.cpp.o CMakeFiles/Village.dir/ResourceManager.cpp.o CMakeFiles/Village.dir/GameObject.cpp.o CMakeFiles/Village.dir/UI.cpp.o CMakeFiles/Village.dir/UIElement.cpp.o | /opt/homebrew/lib/libraylib.dylib
   FLAGS = -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.0.sdk -mmacosx-version-min=13.6
   LINK_LIBRARIES = /opt/homebrew/lib/libraylib.dylib
   OBJECT_DIR = CMakeFiles/Village.dir

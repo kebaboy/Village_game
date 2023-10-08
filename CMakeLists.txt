@@ -8,6 +8,10 @@ add_executable(Village main.cpp
         ResourceManager.cpp
         GameObject.cpp
         GameObject.h
+        UI.cpp
+        UI.h
+        UIElement.cpp
+        UIElement.h
 )
 
 find_package(raylib 4.2.0 REQUIRED)
