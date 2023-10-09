@@ -31,9 +31,11 @@ public:
     const float GetVelocity() const;
 };
 
-class House: public GameObject {
+class Building: public GameObject {
 public:
-    House(const Vector2 pos, const Vector2 size, const Texture2D sprite);
+    Building(const Vector2 pos, const Vector2 size, const Texture2D sprite);
 //    void DrawOpacity() const;
 };
+
+
 #endif //VILLAGE_GAMEOBJECT_H

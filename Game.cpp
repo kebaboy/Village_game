@@ -41,16 +41,14 @@ void Game::Update() {
         PlayerMove({0, plVelocity});
     }
     UpdateCamera();
-    if (_ui.BtnPressed()) {
+    if (_ui.BuildMenuBtnPressed()) {
         this->ToggleHousePlacingMode();
         std::cout << "house placing mode: " << _placingHouseMode << std::endl;
     }
     if (_placingHouseMode) {
         Vector2 mousePos = GetMousePosition();
         if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
-//            worldPosition.x = mousePos.x / _camera.zoom + _camera.target.x - (GetScreenWidth() * 0.5f);
-//            worldPosition.y = mousePos.y / _camera.zoom + _camera.target.y - (GetScreenHeight() * 0.5f);
-            _houses.push_back(House(Vector2 {mousePos.x / _camera.zoom + _camera.target.x - (_screenWidth * 0.5f), mousePos.y / _camera.zoom + _camera.target.y - (_screenHeight * 0.5f)}, Vector2{100, 100}, _resourceManager.GetGameTexture("houseSprite")));
+            _buildings.push_back(Building(GetScreenToWorld2D(mousePos, _camera), Vector2{100, 100}, _resourceManager.GetGameTexture("houseSprite")));
             _placingHouseMode = false; // Закончить режим размещения
             std::cout << "push ok\n";
         }
@@ -78,7 +76,7 @@ void Game::Draw() {
             }
         }
     }
-    for (const auto& house : _houses) {
+    for (const auto& house : _buildings) {
         house.Draw();
     }
     // Если мы в режиме размещения, рисуем контур дома

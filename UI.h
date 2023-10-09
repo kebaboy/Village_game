@@ -16,7 +16,7 @@ public:
     UIElement* FindElement(/*...*/);
     void DrawAll() const;
     void UpdateAll();
-    bool BtnPressed() const;
+    bool BuildMenuBtnPressed() const;
 };
 
 

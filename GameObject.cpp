@@ -43,7 +43,7 @@ const float Player::GetVelocity() const {
     return _playerVelocity;
 }
 
-House::House(const Vector2 pos, const Vector2 size, const Texture2D sprite): GameObject(pos, size) {_sprite = sprite;}
+Building::Building(const Vector2 pos, const Vector2 size, const Texture2D sprite): GameObject(pos, size) {_sprite = sprite;}
 
 //void House::DrawOpacity() const {
 //    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{GetMousePosition().x, GetMousePosition().y, _size.x, _size.y}, Vector2{0,0}, 0.0f, Fade(WHITE, 0.5f));

@@ -19,7 +19,7 @@ void UI::UpdateAll() {
 
 }
 
-bool UI::BtnPressed() const {
+bool UI::BuildMenuBtnPressed() const {
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(),
                                                                           Rectangle{_uiElements[0]->GetPosition().x,
                                                                                     _uiElements[0]->GetPosition().y,
