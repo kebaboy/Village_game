@@ -37,5 +37,13 @@ public:
 //    void DrawOpacity() const;
 };
 
+class Tree: public GameObject {
+private:
+    int _resources;
+public:
+    Tree(const Vector2 pos, const Vector2 size, const Texture2D sprite);
+//    void DrawOpacity() const;
+};
+
 
 #endif //VILLAGE_GAMEOBJECT_H

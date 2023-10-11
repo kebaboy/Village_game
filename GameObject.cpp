@@ -8,7 +8,6 @@
 ResourceManager resourceManager;
 
 GameObject::GameObject(const Vector2 pos, const Vector2 size): _position(pos), _size(size) {
-
 }
 
 void GameObject::Draw() const {
@@ -48,3 +47,4 @@ Building::Building(const Vector2 pos, const Vector2 size, const Texture2D sprite
 //void House::DrawOpacity() const {
 //    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{GetMousePosition().x, GetMousePosition().y, _size.x, _size.y}, Vector2{0,0}, 0.0f, Fade(WHITE, 0.5f));
 //}
+Tree::Tree(const Vector2 pos, const Vector2 size, const Texture2D sprite): GameObject(pos, size) {_sprite = sprite;}

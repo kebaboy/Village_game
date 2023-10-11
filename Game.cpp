@@ -12,17 +12,20 @@ Game::Game() : _screenWidth(1000), _screenHeight(650),
 
 void Game::Initialize() {
     InitWindow(_screenWidth, _screenHeight, "Village");
-    _resourceManager.LoadGameTexture("playerSprite", "chel.png");
-    _resourceManager.LoadGameTexture("grassSprite", "grass.png");
-    _resourceManager.LoadGameTexture("sandSprite", "sand.png");
-    _resourceManager.LoadGameTexture("houseSprite", "house.png");
-    _player.SetTexture(_resourceManager.GetGameTexture("playerSprite"));
+    _resourceManager.LoadGameTexture("player", "chel.png");
+    _resourceManager.LoadGameTexture("grass", "grass.png");
+    _resourceManager.LoadGameTexture("sand", "sand.png");
+    _resourceManager.LoadGameTexture("house", "house.png");
+    _resourceManager.LoadGameTexture("start_btn", "start_btn.png");
+    _resourceManager.LoadGameTexture("tree", "tree.png");
+    _player.SetTexture(_resourceManager.GetGameTexture("player"));
     _camera = {0};
     _camera.target = _player.GetPositon();
     _camera.offset = Vector2{(float)(_screenWidth/2), (float)_screenHeight/2};
     _camera.rotation = 0.0f;
-    _camera.zoom = 1.0f;
-    _ui.AddElement(std::make_unique<UIButton>(_screenWidth -100, _screenHeight - 100, 70, 70, "Click me!"));
+    _camera.zoom = 0.5f;
+    _ui.Initialize(Vector2 {(float)_screenWidth, (float)_screenHeight}, _resourceManager);
+    _trees.push_back(Tree(Vector2{500, 600}, Vector2{100.0f, 180.0f},_resourceManager.GetGameTexture("tree")));
     SetTargetFPS(60);
 }
 
@@ -41,15 +44,17 @@ void Game::Update() {
         PlayerMove({0, plVelocity});
     }
     UpdateCamera();
-    if (_ui.BuildMenuBtnPressed()) {
-        this->ToggleHousePlacingMode();
-        std::cout << "house placing mode: " << _placingHouseMode << std::endl;
-    }
-    if (_placingHouseMode) {
+    _ui.UpdateAll();
+//    if (_ui.GetElement(0)->BtnPressed()) {
+//        this->ToggleHousePlacingMode();
+//        std::cout << "house placing mode: " << _placingHouseMode << std::endl;
+//    }
+    if (static_cast<BuildMenu*>(_ui.GetElement(1))->GetBuildMenuElement(0)->BtnPressed()) {
         Vector2 mousePos = GetMousePosition();
         if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
-            _buildings.push_back(Building(GetScreenToWorld2D(mousePos, _camera), Vector2{100, 100}, _resourceManager.GetGameTexture("houseSprite")));
-            _placingHouseMode = false; // Закончить режим размещения
+            _buildings.push_back(Building(GetScreenToWorld2D(mousePos, _camera), Vector2{100, 100}, _resourceManager.GetGameTexture("house")));
+            this->ToggleHousePlacingMode();
+            static_cast<BuildMenu*>(_ui.GetElement(1))->GetBuildMenuElement(0)->BtnUnpressed(); // Закончить режим размещения
             std::cout << "push ok\n";
         }
     }
@@ -66,24 +71,27 @@ void Game::Draw() {
             Vector2 positionTile = {(float)(x * _tileSize), (float)(y * _tileSize)};
             switch (_map[y][x]) {
                 case 0:
-                    DrawTexturePro(_resourceManager.GetGameTexture("grassSprite"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("grassSprite").width, (float)_resourceManager.GetGameTexture("grassSprite").height}, Rectangle{positionTile.x, positionTile.y, (float)_tileSize, (float)_tileSize}, Vector2{0,0}, 0.0f, WHITE);
+                    DrawTexturePro(_resourceManager.GetGameTexture("grass"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("grass").width, (float)_resourceManager.GetGameTexture("grass").height}, Rectangle{positionTile.x, positionTile.y, (float)_tileSize, (float)_tileSize}, Vector2{0,0}, 0.0f, WHITE);
                     break;
                 case 1:
                     DrawRectangle((float)positionTile.x, (float)positionTile.y, _tileSize, _tileSize, BROWN);
                     break;
                 case 3:
-                    DrawTexturePro(_resourceManager.GetGameTexture("sandSprite"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("sandSprite").width, (float)_resourceManager.GetGameTexture("sandSprite").height}, Rectangle{positionTile.x, positionTile.y, (float)_tileSize, (float)_tileSize}, Vector2{0,0}, 0.0f, WHITE);
+                    DrawTexturePro(_resourceManager.GetGameTexture("sand"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("sand").width, (float)_resourceManager.GetGameTexture("sand").height}, Rectangle{positionTile.x, positionTile.y, (float)_tileSize, (float)_tileSize}, Vector2{0,0}, 0.0f, WHITE);
             }
         }
     }
     for (const auto& house : _buildings) {
         house.Draw();
     }
+    for (const auto& tree : _trees) {
+        tree.Draw();
+    }
     // Если мы в режиме размещения, рисуем контур дома
 
     _player.Draw();
     EndMode2D();
-    if (_placingHouseMode) {
+    if (static_cast<BuildMenu*>(_ui.GetElement(1))->GetBuildMenuElement(0)->BtnPressed()) {
         DrawRectangleLines((float)GetMousePosition().x, (float)GetMousePosition().y, 100, 100, BLACK);
     }
     _ui.DrawAll();
