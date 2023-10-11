@@ -18,12 +18,13 @@ void Game::Initialize() {
     _resourceManager.LoadGameTexture("house", "house.png");
     _resourceManager.LoadGameTexture("start_btn", "start_btn.png");
     _resourceManager.LoadGameTexture("tree", "tree.png");
+    _resourceManager.LoadGameTexture("rock", "rock.png");
     _player.SetTexture(_resourceManager.GetGameTexture("player"));
     _camera = {0};
     _camera.target = _player.GetPositon();
     _camera.offset = Vector2{(float)(_screenWidth/2), (float)_screenHeight/2};
     _camera.rotation = 0.0f;
-    _camera.zoom = 0.5f;
+    _camera.zoom = 1.0f;
     _ui.Initialize(Vector2 {(float)_screenWidth, (float)_screenHeight}, _resourceManager);
     _trees.push_back(Tree(Vector2{500, 600}, Vector2{100.0f, 180.0f},_resourceManager.GetGameTexture("tree")));
     SetTargetFPS(60);
