@@ -35,9 +35,12 @@ private:
     float _tileSize;
     ResourceManager _resourceManager;
 public:
-    Map(int w, int h, float tileSize, ResourceManager& resourceManager);
+    Map(int w, int h, float tileSize);
     void Generate();
-    void Draw();
+    void Draw(ResourceManager& resourceManager);
+    Vector2 GetMapSize() {
+        return Vector2{_width * _tileSize, _height * _tileSize};
+    }
 };
 
 
