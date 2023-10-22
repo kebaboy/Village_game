@@ -58,6 +58,14 @@ public:
     int GetCostWood() const override;
     int GetCostStone() const override;
 };
+class MinerHouse: public WorkerHouse {
+public:
+    MinerHouse(const Vector2 pos, const Texture2D sprite);
+
+    int GetCostFood() const override;
+    int GetCostWood() const override;
+    int GetCostStone() const override;
+};
 
 
 
@@ -79,6 +87,10 @@ public:
 class WoodStorage: public Storage {
 public:
     WoodStorage(const Vector2 pos, const Texture2D sprite);
+};
+class StoneStorage: public Storage {
+public:
+    StoneStorage(const Vector2 pos, const Texture2D sprite);
 };
 
 
@@ -107,17 +119,18 @@ public:
 };
 
 
-enum class LumberjackTaskMode {
+enum class TaskMode {
     TO_TREE,
+    TO_STONE,
     TO_HOME,
-    CHOPPING,
+    COLLECTING,
     RESTING,
     DELIVERING,
     IDLE,
 };
 class Lumberjack : public Worker {
 private:
-    LumberjackTaskMode _taskMode;
+    TaskMode _taskMode;
 
     float _choppingTime = 0.0f;
     float _timeToChop = 3.0f;
@@ -127,10 +140,25 @@ public:
     Lumberjack(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition);
 
     void SetHomePosition(Vector2 pos);
-//    void MoveToward
 
     void Draw() const override;
     void Update(std::vector<Storage*>& woodStorages, Map& map);
+};
+class Miner : public Worker {
+private:
+    TaskMode _taskMode;
+
+    float _minningTime = 0.0f;
+    float _timeToMine = 3.0f;
+    float _restingTime = 0.0f;
+    float _timeToRest = 5.0f;
+public:
+    Miner(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition);
+
+    void SetHomePosition(Vector2 pos);
+
+    void Draw() const override;
+    void Update(std::vector<Storage*>& stoneStorages, Map& map);
 };
 
 class Tree: public GameObject {

@@ -47,14 +47,18 @@ private:
     std::vector<Tree> _trees;
 
     std::vector<LumberjackHouse> _lumberjackHouses;
+    std::vector<MinerHouse> _minerHouses;
 
     std::vector<WoodStorage> _woodStorages;
+    std::vector<StoneStorage> _stoneStorages;
 
     std::vector<Lumberjack> _lumberjasks;
+    std::vector<Miner> _miners;
 
     bool _placingHouseMode = false;
 
     Vector2 _woodCounter;
+    Vector2 _stoneCounter;
 public:
     Game();
     void Initialize();
@@ -68,6 +72,7 @@ public:
     bool IsInHousePlacingMode() const;
     Vector2 GetMapSize() const;
     Vector2 CalculateTotalWood();
+    Vector2 CalculateTotalStone();
 };
 
 

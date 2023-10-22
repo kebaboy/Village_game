@@ -56,8 +56,14 @@ int LumberjackHouse::GetCostFood() const {return 10;}
 int LumberjackHouse::GetCostWood() const {return 70;}
 int LumberjackHouse::GetCostStone() const {return 50;}
 
+MinerHouse::MinerHouse(const Vector2 pos, const Texture2D sprite): WorkerHouse(pos, sprite) {}
 
-Storage::Storage(const Vector2 pos, const Texture2D sprite): GameObject(pos, Vector2{100.0f, 100.0f}, sprite) {}
+int MinerHouse::GetCostFood() const {return 10;}
+int MinerHouse::GetCostWood() const {return 50;}
+int MinerHouse::GetCostStone() const {return 70;}
+
+
+Storage::Storage(const Vector2 pos, const Texture2D sprite): GameObject(pos, Vector2{150.0f, 150.0f}, sprite) {}
 
 bool Storage::AddResource(int amount) {
     if (_resourceCount + amount <= _maxCapacity) {
@@ -80,6 +86,8 @@ bool Storage::isFull() const {
 }
 
 WoodStorage::WoodStorage(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {}
+
+StoneStorage::StoneStorage(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {}
 
 
 
@@ -142,7 +150,7 @@ void Worker::DecreaseEnergy(int delta) {
 }
 
 
-Lumberjack::Lumberjack(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) ,_taskMode(LumberjackTaskMode::TO_TREE) {};
+Lumberjack::Lumberjack(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) ,_taskMode(TaskMode::TO_TREE) {};
 
 void Lumberjack::Draw() const {
     DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
@@ -154,34 +162,34 @@ void Lumberjack::SetHomePosition(Vector2 pos) {
 
 void Lumberjack::Update(std::vector<Storage*>& woodStorages, Map& map) {
     switch (_taskMode) {
-        case LumberjackTaskMode::TO_TREE: {
+        case TaskMode::TO_TREE: {
             Vector2 targetTreePosition = map.FindClosestTreePosition(_position);
             MoveForwardTarget(targetTreePosition);
-            if (IsAtTarget(targetTreePosition)) _taskMode = LumberjackTaskMode::CHOPPING;
+            if (IsAtTarget(targetTreePosition)) _taskMode = TaskMode::COLLECTING;
         }
             break;
-        case LumberjackTaskMode::TO_HOME:
+        case TaskMode::TO_HOME:
             MoveForwardTarget(_homePosition);
             if (IsAtTarget(_homePosition)) {
-                _taskMode = LumberjackTaskMode::RESTING;
+                _taskMode = TaskMode::RESTING;
             }
             break;
-        case LumberjackTaskMode::CHOPPING:
+        case TaskMode::COLLECTING:
             _choppingTime += GetFrameTime();
             if (_choppingTime >= _timeToChop) {
-                _taskMode = LumberjackTaskMode::DELIVERING;
+                _taskMode = TaskMode::DELIVERING;
                 _choppingTime = 0.0f;
             }
             break;
-        case LumberjackTaskMode::RESTING:
+        case TaskMode::RESTING:
             _restingTime += GetFrameTime();
             if (_restingTime >= _timeToRest) {
-                _taskMode = LumberjackTaskMode::TO_TREE;
+                _taskMode = TaskMode::TO_TREE;
                 _energy = _maxEnergy;
                 _restingTime = 0.0f;
             }
             break;
-        case LumberjackTaskMode::IDLE:
+        case TaskMode::IDLE:
             if (IsAtTarget(_homePosition)) {
                 if (_energy != _maxEnergy) _restingTime += GetFrameTime();
                 if (_restingTime >= _timeToRest) {
@@ -190,18 +198,18 @@ void Lumberjack::Update(std::vector<Storage*>& woodStorages, Map& map) {
                 }
                 Vector2 closestStorage = FindClosestStorage(woodStorages);
                 if (!IsEqual(closestStorage, Vector2{-1, -1})) {
-                    _taskMode = LumberjackTaskMode::DELIVERING;
+                    _taskMode = TaskMode::DELIVERING;
                 }
             } else MoveForwardTarget(_homePosition);
             break;
-        case LumberjackTaskMode::DELIVERING:
+        case TaskMode::DELIVERING:
             if (woodStorages.empty()) {
-                _taskMode = LumberjackTaskMode::IDLE;
+                _taskMode = TaskMode::IDLE;
                 break;
             }
             Vector2 closestStorage = FindClosestStorage(woodStorages);
             if (IsEqual(closestStorage, Vector2{-1, -1})) {
-                _taskMode = LumberjackTaskMode::IDLE;
+                _taskMode = TaskMode::IDLE;
                 break;
             }
             MoveForwardTarget(closestStorage);
@@ -210,9 +218,88 @@ void Lumberjack::Update(std::vector<Storage*>& woodStorages, Map& map) {
                 if (successfullyStored) {
                     DecreaseEnergy();
                     if (_energy <= 0) {
-                        _taskMode = LumberjackTaskMode::TO_HOME;
+                        _taskMode = TaskMode::TO_HOME;
                     } else {
-                        _taskMode = LumberjackTaskMode::TO_TREE;
+                        _taskMode = TaskMode::TO_TREE;
+                    }
+                }
+            }
+            break;
+
+    }
+}
+
+Miner::Miner(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) ,_taskMode(TaskMode::TO_STONE) {};
+
+void Miner::Draw() const {
+    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
+}
+
+void Miner::SetHomePosition(Vector2 pos) {
+    _homePosition = pos;
+}
+
+void Miner::Update(std::vector<Storage*>& stoneStorages, Map& map) {
+    switch (_taskMode) {
+        case TaskMode::TO_STONE: {
+            Vector2 targetStonePosition = map.FindClosestStonePosition(_position);
+            MoveForwardTarget(targetStonePosition);
+            if (IsAtTarget(targetStonePosition)) _taskMode = TaskMode::COLLECTING;
+        }
+            break;
+        case TaskMode::TO_HOME:
+            MoveForwardTarget(_homePosition);
+            if (IsAtTarget(_homePosition)) {
+                _taskMode = TaskMode::RESTING;
+            }
+            break;
+        case TaskMode::COLLECTING:
+            _minningTime += GetFrameTime();
+            if (_minningTime >= _timeToMine) {
+                _taskMode = TaskMode::DELIVERING;
+                _minningTime = 0.0f;
+            }
+            break;
+        case TaskMode::RESTING:
+            _restingTime += GetFrameTime();
+            if (_restingTime >= _timeToRest) {
+                _taskMode = TaskMode::TO_STONE;
+                _energy = _maxEnergy;
+                _restingTime = 0.0f;
+            }
+            break;
+        case TaskMode::IDLE:
+            if (IsAtTarget(_homePosition)) {
+                if (_energy != _maxEnergy) _restingTime += GetFrameTime();
+                if (_restingTime >= _timeToRest) {
+                    _energy = _maxEnergy;
+                    _restingTime = 0.0f;
+                }
+                Vector2 closestStorage = FindClosestStorage(stoneStorages);
+                if (!IsEqual(closestStorage, Vector2{-1, -1})) {
+                    _taskMode = TaskMode::DELIVERING;
+                }
+            } else MoveForwardTarget(_homePosition);
+            break;
+        case TaskMode::DELIVERING:
+            if (stoneStorages.empty()) {
+                _taskMode = TaskMode::IDLE;
+                break;
+            }
+            Vector2 closestStorage = FindClosestStorage(stoneStorages);
+            if (IsEqual(closestStorage, Vector2{-1, -1})) {
+                _taskMode = TaskMode::IDLE;
+                break;
+            }
+            MoveForwardTarget(closestStorage);
+            if (IsAtTarget(closestStorage)) {
+                bool successfullyStored = AddResourceToStorage(stoneStorages);
+                if (successfullyStored) {
+                    DecreaseEnergy();
+                    if (_energy <= 0) {
+                        _taskMode = TaskMode::TO_HOME;
+                    } else {
+                        _taskMode = TaskMode::TO_STONE;
                     }
                 }
             }
@@ -223,21 +310,21 @@ void Lumberjack::Update(std::vector<Storage*>& woodStorages, Map& map) {
 //    float magnitude;
 //
 //    switch (_taskMode) {
-//        case LumberjackTaskMode::CHOPPING:
+//        case TaskMode::COLLECTING:
 //            _choppingTime += GetFrameTime();
 //            if (_choppingTime >= _timeToChop) {
 //                woodCount += _choppingAmount;
-//                _taskMode = LumberjackTaskMode::DELIVERING;
+//                _taskMode = TaskMode::DELIVERING;
 //                _homePosition = _homePosition;
 //                _choppingTime = 0.0f;
 //            }
 //            break;
 //
-//        case LumberjackTaskMode::DELIVERING:
+//        case TaskMode::DELIVERING:
 //
 //
-//        case LumberjackTaskMode::TO_TREE:
-//        case LumberjackTaskMode::TO_HOME:
+//        case TaskMode::TO_TREE:
+//        case TaskMode::TO_HOME:
 //            direction = {
 //                    _homePosition.x - _position.x,
 //                    _homePosition.y - _position.y
@@ -252,12 +339,12 @@ void Lumberjack::Update(std::vector<Storage*>& woodStorages, Map& map) {
 //
 //            if (Vector2Distance(_position, _homePosition) < _speed) {
 //                _position = _homePosition;
-//                if (_taskMode == LumberjackTaskMode::TO_TREE) {
-//                    _taskMode = LumberjackTaskMode::CHOPPING;
+//                if (_taskMode == TaskMode::TO_TREE) {
+//                    _taskMode = TaskMode::COLLECTING;
 //                    _currentTree = _homePosition;
 //                    _homePosition = _homePosition; // двигаемся обратно к начальной позиции
 //                } else {
-//                    _taskMode = LumberjackTaskMode::TO_TREE;
+//                    _taskMode = TaskMode::TO_TREE;
 //                    _homePosition = _currentTree;
 //                }
 //            }

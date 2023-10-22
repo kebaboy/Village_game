@@ -7,6 +7,9 @@
 UIElement::UIElement(float x, float y, float w, float h, bool visibility, Texture2D texture)
         : _position({x, y}), _size({w, h}), _visible(visibility), _sprite(texture) {}
 
+        UIElement::UIElement(float x, float y, float w, float h, bool visibility)
+        : _position({x, y}), _size({w, h}), _visible(visibility) {}
+
 void UIElement::Draw() {
     if (IsVisible()) {
         DrawTexturePro(_sprite, Rectangle{0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x, _position.y, _size.x, _size.y}, Vector2{0, 0}, 0.0f, WHITE);
@@ -75,7 +78,7 @@ void BuildMenuBtn::Update() {
         _pressed = !_pressed;
     }
 }
-BuildMenu::BuildMenu(float x, float y, float w, float h, bool visibility, Texture2D texture): UIElement(x, y, w, h, visibility, texture) {}
+BuildMenu::BuildMenu(float x, float y, float w, float h, bool visibility): UIElement(x, y, w, h, visibility) {}
 
 void BuildMenu::AddBuildMenuElement(std::unique_ptr<UIElement> element) {
     _elements.push_back(std::move(element));

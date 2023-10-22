@@ -52,6 +52,27 @@ Vector2 Map::FindClosestTreePosition(Vector2 pos) {
     return closestTreePos;
 }
 
+Vector2 Map::FindClosestStonePosition(Vector2 pos) {
+    Vector2 closestStonePos;
+    float minDistance = FLT_MAX;
+
+    for (int y = 0; y < _height; y++) {
+        for (int x = 0; x < _width; x++) {
+            if (_tiles[y][x].GetOverlayTyleType() == TileType::STONE) {
+                Vector2 stonePos = { _tiles[y][x].GetPosition().x, _tiles[y][x].GetPosition().y};
+                float distance = Vector2Distance(pos, stonePos);
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestStonePos = stonePos;
+                }
+            }
+        }
+    }
+
+    return closestStonePos;
+}
+
 Tile::Tile(Vector2 pos, TileType base, TileType overlay): _position(pos), _baseType(base), _overlayType(overlay) {}
 
 std::string Tile::baseTypeToString(TileType type) {

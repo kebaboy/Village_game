@@ -20,7 +20,7 @@ int main() {
 //    InitWindow(screenWidth, screenHeight, "raylib [core] example - keyboard input");
 //    Texture2D man = LoadTexture("../resources/textures/chel.png");
 //    Texture2D grass = LoadTexture("../resources/textures/grass.png");
-//    Texture2D house = LoadTexture("../resources/textures/house.png");
+//    Texture2D house = LoadTexture("../resources/textures/lmbrjck-house.png");
 //
 //    auto frameWidth = (float)(man.width / 4);
 //    auto frameHeight = (float)(man.height / 4);

@@ -16,6 +16,7 @@ protected:
     Texture2D _sprite;
 public:
     UIElement(float x, float y, float w, float h, bool visibility, Texture2D texture);
+    UIElement(float x, float y, float w, float h, bool visibility);
 
     virtual void Draw(); // Отрисовка элемента UI
     virtual void Update() = 0; // Обновление логики элемента
@@ -53,7 +54,7 @@ class BuildMenu: public UIElement {
 private:
     std::vector<std::unique_ptr<UIElement>> _elements;
 public:
-    BuildMenu(float x, float y, float w, float h, bool visibility, Texture2D texture);
+    BuildMenu(float x, float y, float w, float h, bool visibility);
     void AddBuildMenuElement(std::unique_ptr<UIElement> element);
     UIElement* GetBuildMenuElement(size_t id);
     void Update() override;

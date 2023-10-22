@@ -45,6 +45,7 @@ public:
     void Draw(ResourceManager& resourceManager);
     Vector2 GetMapSize();
     Vector2 FindClosestTreePosition(Vector2 pos);
+    Vector2 FindClosestStonePosition(Vector2 pos);
 };
 
 
