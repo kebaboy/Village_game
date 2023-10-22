@@ -54,7 +54,7 @@ private:
 
     bool _placingHouseMode = false;
 
-    int _woodCount = 0;
+    Vector2 _woodCounter;
 public:
     Game();
     void Initialize();
@@ -67,6 +67,7 @@ public:
     void ToggleHousePlacingMode();
     bool IsInHousePlacingMode() const;
     Vector2 GetMapSize() const;
+    Vector2 CalculateTotalWood();
 };
 
 

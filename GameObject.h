@@ -7,6 +7,7 @@
 #include "raylib.h"
 #include <string>
 #include "mathFunctions.h"
+#include "Map.h"
 
 class GameObject {
 protected:
@@ -19,7 +20,7 @@ public:
     virtual void Update();
     virtual void Draw() const;
     void SetTexture(const Texture2D& texture);
-    const Vector2& GetPositon() const;
+    const Vector2& GetPosition() const;
     const Vector2& GetSize() const;
     void SetPosition(Vector2 position);
 };
@@ -64,12 +65,15 @@ public:
 class Storage: public GameObject {
 protected:
     int _resourceCount = 0;
-    int _maxCapacity = 100;
+    int _maxCapacity = 3;
 public:
     Storage(const Vector2 pos, const Texture2D sprite);
 
     bool AddResource(int amount);
     int GetCurrentResourceCount() const;
+    int GetCapacity() const;
+
+    bool isFull() const;
 };
 
 class WoodStorage: public Storage {
@@ -78,14 +82,29 @@ public:
 };
 
 
-//class Worker: public GameObject {
-//private:
-//    float _speed = 1.0f;
-//    float _fatigue = ;
-//    float _restTime;
-//public:
-//    Worker(const Vector2 pos, const Vector2 size, const Texture2D sprite);
-//};
+class Worker: public GameObject {
+protected:
+    float _speed = 1.0f;
+    float _maxEnergy = 5;
+    float  _energy = _maxEnergy;
+    float _resourceAmount = 1.0f;
+
+    Vector2 _homePosition;
+public:
+    Worker(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition);
+
+//    std::vector<WoodStorage> woodStorages;
+//    // ... добавление элементов ...
+//
+//    std::vector<Storage*> storages(woodStorages.begin(), woodStorages.end());
+//    npc.FindClosestStorage(storages);
+    Vector2 FindClosestStorage(const std::vector<Storage*>& storages);
+    bool AddResourceToStorage(std::vector<Storage*>& storages);
+    void MoveForwardTarget(const Vector2 target);
+    bool IsAtTarget(const Vector2 target);
+
+    void DecreaseEnergy(int delta = 1);
+};
 
 
 enum class LumberjackTaskMode {
@@ -94,28 +113,24 @@ enum class LumberjackTaskMode {
     CHOPPING,
     RESTING,
     DELIVERING,
+    IDLE,
 };
-class Lumberjack : public GameObject {
+class Lumberjack : public Worker {
 private:
-    float _speed = 1.0f;
-    float _fatigue;
-    float _restTime;
-
-    Vector2 _housePosition;
-    Vector2 _targetTreePosition;
-    Vector2 _currentTree;
     LumberjackTaskMode _taskMode;
+
     float _choppingTime = 0.0f;
     float _timeToChop = 3.0f;
-    float _choppingAmount = 1.0f;
+    float _restingTime = 0.0f;
+    float _timeToRest = 5.0f;
 public:
-    Lumberjack(const Vector2 pos, const Vector2 size, const Texture2D sprite);
+    Lumberjack(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition);
 
-    void SetTargetTreePosition(Vector2 pos);
+    void SetHomePosition(Vector2 pos);
 //    void MoveToward
 
     void Draw() const override;
-    void Update(int& woodCount);
+    void Update(std::vector<Storage*>& woodStorages, Map& map);
 };
 
 class Tree: public GameObject {

@@ -24,7 +24,7 @@ void Game::Initialize() {
     _map.Generate();
     _player.SetTexture(_resourceManager.GetGameTexture("player"));
     _camera = {0};
-    _camera.target = _player.GetPositon();
+    _camera.target = _player.GetPosition();
     _camera.offset = Vector2{(float)_screenWidth/2, (float)_screenHeight/2};
     _camera.rotation = 0.0f;
     _camera.zoom = 1.0f;
@@ -61,8 +61,8 @@ void Game::Update() {
             _lumberjackHouses.push_back(LumberjackHouse(worldPosition, _resourceManager.GetGameTexture("house")));
             this->ToggleHousePlacingMode();
             pbuildMenu->GetBuildMenuElement(0)->BtnUnpressed(); // Закончить режим размещения
-            _lumberjasks.push_back(Lumberjack(Vector2 {worldPosition.x + 50, worldPosition.y + 50}, Vector2{float(80), float(50)}, _resourceManager.GetGameTexture("lumberjack")));
-            _lumberjasks.back().SetTargetTreePosition(_map.FindClosestTreePositon(worldPosition));
+            _lumberjasks.push_back(Lumberjack(Vector2 {worldPosition.x + 50, worldPosition.y + 50}, _resourceManager.GetGameTexture("lumberjack"), worldPosition));
+            _lumberjasks.back().SetHomePosition(worldPosition);
 
             std::cout << "push ok\n";
         }
@@ -77,9 +77,14 @@ void Game::Update() {
             std::cout << "push ok\n";
         }
     }
-    for (auto& lumberjack : _lumberjasks) {
-        lumberjack.Update(_woodCount);
+    std::vector<Storage*> woodStorages;
+    for (auto& ws : _woodStorages) {
+        woodStorages.push_back(&ws);
     }
+    for (auto& lumberjack : _lumberjasks) {
+        lumberjack.Update(woodStorages, _map);
+    }
+    _woodCounter = CalculateTotalWood();
 }
 
 void Game::Draw() {
@@ -132,7 +137,7 @@ void Game::Draw() {
     }
     _ui.DrawAll();
     char buffer[50];
-    snprintf(buffer, sizeof(buffer), "Wood: %d", _woodCount);
+    snprintf(buffer, sizeof(buffer), "Wood: %d / %d", (int)_woodCounter.x, (int)_woodCounter.y);
     DrawText(buffer, 20, 20, 20, BLACK);
     DrawFPS(20, 50);
 
@@ -153,7 +158,7 @@ void Game::Run() {
 //}
 
 void Game::PlayerMove(Vector2 direction) {
-    Vector2 newPosition = {_player.GetPositon().x + direction.x, _player.GetPositon().y + direction.y};
+    Vector2 newPosition = {_player.GetPosition().x + direction.x, _player.GetPosition().y + direction.y};
     if (newPosition.x >= 0 && newPosition.x < _map.GetMapSize().x - _player.GetSize().x &&
         newPosition.y >= 0 && newPosition.y < _map.GetMapSize().y - _player.GetSize().y) {
         _player.SetPosition(newPosition);
@@ -161,7 +166,7 @@ void Game::PlayerMove(Vector2 direction) {
 }
 
 void Game::UpdateCamera() {
-    _camera.target = _player.GetPositon();
+    _camera.target = _player.GetPosition();
 
     if (_camera.target.x - (_screenWidth / 2) < 0) _camera.target.x = _screenWidth / 2;
     if (_camera.target.y - (_screenHeight / 2) < 0) _camera.target.y = _screenHeight / 2;
@@ -175,4 +180,14 @@ void Game::ToggleHousePlacingMode() {
 
 bool Game::IsInHousePlacingMode() const {
     return _placingHouseMode;
+}
+
+Vector2 Game::CalculateTotalWood() {
+    Vector2 woodCounter = {0.0f, 0.0f};
+    if (_woodStorages.empty()) return woodCounter;
+    for (auto& storage : _woodStorages) {
+        woodCounter.x += storage.GetCurrentResourceCount();
+        woodCounter.y += storage.GetCapacity();
+    }
+    return woodCounter;
 }

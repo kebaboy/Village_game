@@ -13,4 +13,8 @@ inline float Vector2Distance(Vector2 v1, Vector2 v2) {
     return sqrt(dx*dx + dy*dy);
 }
 
+inline bool IsEqual(Vector2 v1, Vector2 v2) {
+    return v1.x == v2.x && v1.y == v2.y;
+}
+
 #endif //VILLAGE_MATHFUNCTIONS_H

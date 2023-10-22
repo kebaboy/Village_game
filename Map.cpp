@@ -31,7 +31,7 @@ Vector2 Map::GetMapSize() {
     return Vector2{_width * _tileSize, _height * _tileSize};
 }
 
-Vector2 Map::FindClosestTreePositon(Vector2 pos) {
+Vector2 Map::FindClosestTreePosition(Vector2 pos) {
     Vector2 closestTreePos;
     float minDistance = FLT_MAX;
 

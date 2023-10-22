@@ -18,7 +18,7 @@ void GameObject::Draw() const {
 
 void GameObject::Update() {};
 
-const Vector2& GameObject::GetPositon() const {
+const Vector2& GameObject::GetPosition() const {
     return _position;
 }
 
@@ -71,6 +71,14 @@ int Storage::GetCurrentResourceCount() const {
     return _resourceCount;
 }
 
+int Storage::GetCapacity() const {
+    return _maxCapacity;
+}
+
+bool Storage::isFull() const {
+    return _resourceCount >= _maxCapacity;
+}
+
 WoodStorage::WoodStorage(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {}
 
 
@@ -79,64 +87,184 @@ Tree::Tree(const Vector2 pos, const Vector2 size, const Texture2D sprite): GameO
 
 
 
+Worker::Worker(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): GameObject(pos, Vector2 {80.0f, 50.0f}, sprite), _homePosition(homePosition) {};
 
-Lumberjack::Lumberjack(const Vector2 pos, const Vector2 size, const Texture2D sprite): GameObject(pos, size, sprite), _housePosition(pos), _taskMode(LumberjackTaskMode::TO_TREE) {};
+Vector2 Worker::FindClosestStorage(const std::vector<Storage*> &storages) {
+    Vector2 closestPosition = { -1, -1 };
+    float closestDistance = std::numeric_limits<float>::max();
+
+    for (const auto& storage : storages) {
+        if (!storage->isFull()) {
+            float distance = Vector2Distance(_position, storage->GetPosition());
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestPosition = storage->GetPosition();
+            }
+        }
+    }
+    return closestPosition;
+}
+
+bool Worker::AddResourceToStorage(std::vector<Storage*> &storages) {
+    for (auto& storage : storages) {
+        if (Vector2Distance(_position, storage->GetPosition()) < _speed) {
+            if (storage->AddResource(_resourceAmount)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void Worker::MoveForwardTarget(const Vector2 target) {
+    Vector2 direction = {
+            target.x - _position.x,
+            target.y - _position.y
+    };
+
+    float magnitude = sqrt(direction.x * direction.x + direction.y * direction.y);
+    direction.x /= magnitude;
+    direction.y /= magnitude;
+
+    _position.x += direction.x * _speed;
+    _position.y += direction.y * _speed;
+}
+
+bool Worker::IsAtTarget(const Vector2 target) {
+    if (Vector2Distance(_position, target) < _speed) {
+        return true;
+    }
+    return false;
+}
+
+void Worker::DecreaseEnergy(int delta) {
+    _energy -= delta;
+}
+
+
+Lumberjack::Lumberjack(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) ,_taskMode(LumberjackTaskMode::TO_TREE) {};
 
 void Lumberjack::Draw() const {
     DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
 }
 
-void Lumberjack::SetTargetTreePosition(Vector2 pos) {
-    _targetTreePosition = pos;
+void Lumberjack::SetHomePosition(Vector2 pos) {
+    _homePosition = pos;
 }
 
-void Lumberjack::Update(int& woodCount) {
-    Vector2 direction;
-    float magnitude;
-
+void Lumberjack::Update(std::vector<Storage*>& woodStorages, Map& map) {
     switch (_taskMode) {
+        case LumberjackTaskMode::TO_TREE: {
+            Vector2 targetTreePosition = map.FindClosestTreePosition(_position);
+            MoveForwardTarget(targetTreePosition);
+            if (IsAtTarget(targetTreePosition)) _taskMode = LumberjackTaskMode::CHOPPING;
+        }
+            break;
+        case LumberjackTaskMode::TO_HOME:
+            MoveForwardTarget(_homePosition);
+            if (IsAtTarget(_homePosition)) {
+                _taskMode = LumberjackTaskMode::RESTING;
+            }
+            break;
         case LumberjackTaskMode::CHOPPING:
             _choppingTime += GetFrameTime();
             if (_choppingTime >= _timeToChop) {
-                woodCount += _choppingAmount;
                 _taskMode = LumberjackTaskMode::DELIVERING;
-                _targetTreePosition = _housePosition;
                 _choppingTime = 0.0f;
             }
             break;
-
+        case LumberjackTaskMode::RESTING:
+            _restingTime += GetFrameTime();
+            if (_restingTime >= _timeToRest) {
+                _taskMode = LumberjackTaskMode::TO_TREE;
+                _energy = _maxEnergy;
+                _restingTime = 0.0f;
+            }
+            break;
+        case LumberjackTaskMode::IDLE:
+            if (IsAtTarget(_homePosition)) {
+                if (_energy != _maxEnergy) _restingTime += GetFrameTime();
+                if (_restingTime >= _timeToRest) {
+                    _energy = _maxEnergy;
+                    _restingTime = 0.0f;
+                }
+                Vector2 closestStorage = FindClosestStorage(woodStorages);
+                if (!IsEqual(closestStorage, Vector2{-1, -1})) {
+                    _taskMode = LumberjackTaskMode::DELIVERING;
+                }
+            } else MoveForwardTarget(_homePosition);
+            break;
         case LumberjackTaskMode::DELIVERING:
-
-
-        case LumberjackTaskMode::TO_TREE:
-        case LumberjackTaskMode::TO_HOME:
-            direction = {
-                    _targetTreePosition.x - _position.x,
-                    _targetTreePosition.y - _position.y
-            };
-
-            magnitude = sqrt(direction.x * direction.x + direction.y * direction.y);
-            direction.x /= magnitude;
-            direction.y /= magnitude;
-
-            _position.x += direction.x * _speed;
-            _position.y += direction.y * _speed;
-
-            if (Vector2Distance(_position, _targetTreePosition) < _speed) {
-                _position = _targetTreePosition;
-                if (_taskMode == LumberjackTaskMode::TO_TREE) {
-                    _taskMode = LumberjackTaskMode::CHOPPING;
-                    _currentTree = _targetTreePosition;
-                    _targetTreePosition = _housePosition; // двигаемся обратно к начальной позиции
-                } else {
-                    _taskMode = LumberjackTaskMode::TO_TREE;
-                    _targetTreePosition = _currentTree;
+            if (woodStorages.empty()) {
+                _taskMode = LumberjackTaskMode::IDLE;
+                break;
+            }
+            Vector2 closestStorage = FindClosestStorage(woodStorages);
+            if (IsEqual(closestStorage, Vector2{-1, -1})) {
+                _taskMode = LumberjackTaskMode::IDLE;
+                break;
+            }
+            MoveForwardTarget(closestStorage);
+            if (IsAtTarget(closestStorage)) {
+                bool successfullyStored = AddResourceToStorage(woodStorages);
+                if (successfullyStored) {
+                    DecreaseEnergy();
+                    if (_energy <= 0) {
+                        _taskMode = LumberjackTaskMode::TO_HOME;
+                    } else {
+                        _taskMode = LumberjackTaskMode::TO_TREE;
+                    }
                 }
             }
             break;
 
-        default:
-            // Обработка неизвестного режима задачи, если таковой имеется.
-            break;
     }
+//    Vector2 direction;
+//    float magnitude;
+//
+//    switch (_taskMode) {
+//        case LumberjackTaskMode::CHOPPING:
+//            _choppingTime += GetFrameTime();
+//            if (_choppingTime >= _timeToChop) {
+//                woodCount += _choppingAmount;
+//                _taskMode = LumberjackTaskMode::DELIVERING;
+//                _homePosition = _homePosition;
+//                _choppingTime = 0.0f;
+//            }
+//            break;
+//
+//        case LumberjackTaskMode::DELIVERING:
+//
+//
+//        case LumberjackTaskMode::TO_TREE:
+//        case LumberjackTaskMode::TO_HOME:
+//            direction = {
+//                    _homePosition.x - _position.x,
+//                    _homePosition.y - _position.y
+//            };
+//
+//            magnitude = sqrt(direction.x * direction.x + direction.y * direction.y);
+//            direction.x /= magnitude;
+//            direction.y /= magnitude;
+//
+//            _position.x += direction.x * _speed;
+//            _position.y += direction.y * _speed;
+//
+//            if (Vector2Distance(_position, _homePosition) < _speed) {
+//                _position = _homePosition;
+//                if (_taskMode == LumberjackTaskMode::TO_TREE) {
+//                    _taskMode = LumberjackTaskMode::CHOPPING;
+//                    _currentTree = _homePosition;
+//                    _homePosition = _homePosition; // двигаемся обратно к начальной позиции
+//                } else {
+//                    _taskMode = LumberjackTaskMode::TO_TREE;
+//                    _homePosition = _currentTree;
+//                }
+//            }
+//            break;
+//
+//        default:
+//            // Обработка неизвестного режима задачи, если таковой имеется.
+//            break;
+//    }
 }

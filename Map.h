@@ -44,7 +44,7 @@ public:
     void Generate();
     void Draw(ResourceManager& resourceManager);
     Vector2 GetMapSize();
-    Vector2 FindClosestTreePositon(Vector2 pos);
+    Vector2 FindClosestTreePosition(Vector2 pos);
 };
 
 
