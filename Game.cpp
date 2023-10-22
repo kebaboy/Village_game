@@ -19,6 +19,8 @@ void Game::Initialize() {
     _resourceManager.LoadGameTexture("start_btn", "start_btn.png");
     _resourceManager.LoadGameTexture("tree", "tree.png");
     _resourceManager.LoadGameTexture("stone", "stone.png");
+    _resourceManager.LoadGameTexture("lumberjack", "lumberjack.png");
+    _resourceManager.LoadGameTexture("wood_storage", "wood-storage.png");
     _map.Generate();
     _player.SetTexture(_resourceManager.GetGameTexture("player"));
     _camera = {0};
@@ -27,7 +29,7 @@ void Game::Initialize() {
     _camera.rotation = 0.0f;
     _camera.zoom = 1.0f;
     _ui.Initialize(Vector2 {(float)_screenWidth, (float)_screenHeight}, _resourceManager);
-    _trees.push_back(Tree(Vector2{500, 600}, Vector2{100.0f, 180.0f},_resourceManager.GetGameTexture("tree")));
+//    _trees.push_back(Tree(Vector2{500, 600}, Vector2{100.0f, 180.0f},_resourceManager.GetGameTexture("tree")));
     SetTargetFPS(60);
 }
 
@@ -51,14 +53,32 @@ void Game::Update() {
 //        this->ToggleHousePlacingMode();
 //        std::cout << "house placing mode: " << _placingHouseMode << std::endl;
 //    }
-    if (static_cast<BuildMenu*>(_ui.GetElement(1))->GetBuildMenuElement(0)->BtnPressed()) {
+    BuildMenu* pbuildMenu = static_cast<BuildMenu*>(_ui.GetElement(1));
+    if (pbuildMenu->GetBuildMenuElement(0)->BtnPressed()) {
         Vector2 mousePos = GetMousePosition();
         if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
-            _buildings.push_back(Building(GetScreenToWorld2D(mousePos, _camera), Vector2{100, 100}, _resourceManager.GetGameTexture("house")));
+            Vector2 worldPosition = GetScreenToWorld2D(mousePos, _camera);
+            _lumberjackHouses.push_back(LumberjackHouse(worldPosition, _resourceManager.GetGameTexture("house")));
             this->ToggleHousePlacingMode();
-            static_cast<BuildMenu*>(_ui.GetElement(1))->GetBuildMenuElement(0)->BtnUnpressed(); // Закончить режим размещения
+            pbuildMenu->GetBuildMenuElement(0)->BtnUnpressed(); // Закончить режим размещения
+            _lumberjasks.push_back(Lumberjack(Vector2 {worldPosition.x + 50, worldPosition.y + 50}, Vector2{float(80), float(50)}, _resourceManager.GetGameTexture("lumberjack")));
+            _lumberjasks.back().SetTargetTreePosition(_map.FindClosestTreePositon(worldPosition));
+
             std::cout << "push ok\n";
         }
+    }
+    if (pbuildMenu->GetBuildMenuElement(1)->BtnPressed()) {
+        Vector2 mousePos = GetMousePosition();
+        if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
+            Vector2 worldPosition = GetScreenToWorld2D(mousePos, _camera);
+            _woodStorages.push_back(WoodStorage(worldPosition, _resourceManager.GetGameTexture("wood_storage")));
+            this->ToggleHousePlacingMode();
+            pbuildMenu->GetBuildMenuElement(1)->BtnUnpressed(); // Закончить режим размещения
+            std::cout << "push ok\n";
+        }
+    }
+    for (auto& lumberjack : _lumberjasks) {
+        lumberjack.Update(_woodCount);
     }
 }
 
@@ -84,8 +104,14 @@ void Game::Draw() {
 //        }
 //    }
     _map.Draw(_resourceManager);
-    for (const auto& house : _buildings) {
+    for (const auto& house : _lumberjackHouses) {
         house.Draw();
+    }
+    for (const auto& storage : _woodStorages) {
+        storage.Draw();
+    }
+    for (const auto& lumberjack : _lumberjasks) {
+        lumberjack.Draw();
     }
     for (const auto& tree : _trees) {
         tree.Draw();
@@ -96,9 +122,19 @@ void Game::Draw() {
     EndMode2D();
     if (static_cast<BuildMenu*>(_ui.GetElement(1))->GetBuildMenuElement(0)->BtnPressed()) {
         DrawRectangleLines((float)GetMousePosition().x, (float)GetMousePosition().y, 100, 100, BLACK);
+        DrawTexturePro(static_cast<BuildMenu*>(_ui.GetElement(1))->GetBuildMenuElement(0)->GetTexture(), Rectangle{0.0f, 0.0f, (float)static_cast<BuildMenu*>(_ui.GetElement(1))->GetBuildMenuElement(0)->GetTexture().width, (float)static_cast<BuildMenu*>(_ui.GetElement(1))->GetBuildMenuElement(0)->GetTexture().height}, Rectangle{(float)GetMousePosition().x, (float)GetMousePosition().y, 100.0f, 100.0}, Vector2{0,0}, 0.0f, Color{ 255, 255, 255, 128 });
+
+    }
+    if (static_cast<BuildMenu*>(_ui.GetElement(1))->GetBuildMenuElement(1)->BtnPressed()) {
+        DrawRectangleLines((float)GetMousePosition().x, (float)GetMousePosition().y, 150, 150, BLACK);
+        DrawTexturePro(static_cast<BuildMenu*>(_ui.GetElement(1))->GetBuildMenuElement(1)->GetTexture(), Rectangle{0.0f, 0.0f, (float)static_cast<BuildMenu*>(_ui.GetElement(1))->GetBuildMenuElement(1)->GetTexture().width, (float)static_cast<BuildMenu*>(_ui.GetElement(1))->GetBuildMenuElement(1)->GetTexture().height}, Rectangle{(float)GetMousePosition().x, (float)GetMousePosition().y, 150.0f, 150.0}, Vector2{0,0}, 0.0f, Color{ 255, 255, 255, 128 });
+
     }
     _ui.DrawAll();
-    DrawFPS(20, 20);
+    char buffer[50];
+    snprintf(buffer, sizeof(buffer), "Wood: %d", _woodCount);
+    DrawText(buffer, 20, 20, 20, BLACK);
+    DrawFPS(20, 50);
 
     EndDrawing();
 }

@@ -24,6 +24,7 @@ public:
     bool IsVisible() const;
     Vector2 GetPosition() const;
     Vector2 GetSize() const;
+    Texture2D GetTexture() const;
     void SetPosition(float x, float y);
     bool BtnPressed();
     bool BtnUnpressed();

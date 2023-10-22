@@ -45,8 +45,16 @@ private:
     Map _map;
     Player _player;
     std::vector<Tree> _trees;
-    std::vector<Building> _buildings;
+
+    std::vector<LumberjackHouse> _lumberjackHouses;
+
+    std::vector<WoodStorage> _woodStorages;
+
+    std::vector<Lumberjack> _lumberjasks;
+
     bool _placingHouseMode = false;
+
+    int _woodCount = 0;
 public:
     Game();
     void Initialize();

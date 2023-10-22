@@ -13,7 +13,9 @@ void UI::Initialize(Vector2 screenSize, ResourceManager& resourceManager) {
     // cmd + down -- go to function
     // cmd + shif + move
     AddElement(std::make_unique<BuildMenu>(screenSize.x -90, screenSize.y - 420, 70, 300, false, resourceManager.GetGameTexture("house")));
-    static_cast<BuildMenu*>(_uiElements[1].get())->AddBuildMenuElement(std::make_unique<UIButton>(screenSize.x - 90, screenSize.y - 420, 70, 70, false, resourceManager.GetGameTexture("house"),"Click me!"));
+    BuildMenu* pbuildMenu = static_cast<BuildMenu*>(_uiElements[1].get());
+    pbuildMenu->AddBuildMenuElement(std::make_unique<UIButton>(screenSize.x - 90, screenSize.y - 420, 70, 70, false, resourceManager.GetGameTexture("house"),"Click me!"));
+    pbuildMenu->AddBuildMenuElement(std::make_unique<UIButton>(screenSize.x - 90, screenSize.y - 340, 70, 70, false, resourceManager.GetGameTexture("wood_storage"),"Click me!"));
 }
 
 void UI::AddElement(std::unique_ptr<UIElement> element) {

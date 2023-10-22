@@ -29,6 +29,10 @@ Vector2 UIElement::GetSize() const {
     return _size;
 }
 
+Texture2D UIElement::GetTexture() const {
+    return _sprite;
+}
+
 void UIElement::SetPosition(float x, float y) {
     _position = {x, y};
 }

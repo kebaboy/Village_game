@@ -27,6 +27,31 @@ void Map::Draw(ResourceManager& resourceManager) {
     }
 }
 
+Vector2 Map::GetMapSize() {
+    return Vector2{_width * _tileSize, _height * _tileSize};
+}
+
+Vector2 Map::FindClosestTreePositon(Vector2 pos) {
+    Vector2 closestTreePos;
+    float minDistance = FLT_MAX;
+
+    for (int y = 0; y < _height; y++) {
+        for (int x = 0; x < _width; x++) {
+            if (_tiles[y][x].GetOverlayTyleType() == TileType::TREE) {
+                Vector2 treePos = { _tiles[y][x].GetPosition().x, _tiles[y][x].GetPosition().y};
+                float distance = Vector2Distance(pos, treePos);
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestTreePos = treePos;
+                }
+            }
+        }
+    }
+
+    return closestTreePos;
+}
+
 Tile::Tile(Vector2 pos, TileType base, TileType overlay): _position(pos), _baseType(base), _overlayType(overlay) {}
 
 std::string Tile::baseTypeToString(TileType type) {
@@ -43,4 +68,12 @@ void Tile::Draw(ResourceManager& resourceManager, float tileSize) {
     if(_overlayType != TileType::EMPTY) {
         DrawTexturePro(resourceManager.GetGameTexture(baseTypeToString(_overlayType)), Rectangle{0.0f, 0.0f, (float)resourceManager.GetGameTexture(baseTypeToString(_overlayType)).width, (float)resourceManager.GetGameTexture(baseTypeToString(_overlayType)).height}, Rectangle{_position.x, _position.y, tileSize, tileSize}, Vector2{0,0}, 0.0f, WHITE);
     }
+}
+
+TileType Tile::GetOverlayTyleType() {
+    return _overlayType;
+}
+
+Vector2 Tile::GetPosition() {
+    return _position;
 }
