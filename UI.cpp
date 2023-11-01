@@ -10,50 +10,33 @@
 // cmd + down -- go to function
 // cmd + shif + move
 
-void UI::Initialize(Vector2 screenSize, ResourceManager& resourceManager) {
-    AddElement(std::make_unique<BuildMenuBtn>(screenSize.x -150, screenSize.y - 100, 130, 70, true, resourceManager.GetGameTexture("start_btn")));
-    AddElement(std::make_unique<BuildMenu>(screenSize.x -90, screenSize.y - 420, 70, 300, false));
-
-    BuildMenu* pbuildMenu = static_cast<BuildMenu*>(_uiElements[1].get());
-    pbuildMenu->AddBuildMenuElement(std::make_unique<UIButton>(screenSize.x - 90, screenSize.y - 420, 70, 70, false, resourceManager.GetGameTexture("lumberjack_house"),"Click me!"));
-    pbuildMenu->AddBuildMenuElement(std::make_unique<UIButton>(screenSize.x - 90, screenSize.y - 340, 70, 70, false, resourceManager.GetGameTexture("wood_storage"),"Click me!"));
-    pbuildMenu->AddBuildMenuElement(std::make_unique<UIButton>(screenSize.x - 90, screenSize.y - 260, 70, 70, false, resourceManager.GetGameTexture("miner_house"),"Click me!"));
-    pbuildMenu->AddBuildMenuElement(std::make_unique<UIButton>(screenSize.x - 90, screenSize.y - 180, 70, 70, false, resourceManager.GetGameTexture("stone_storage"),"Click me!"));
+void UI::Initialize(Vector2 screenSize, ResourceManager& resourceManager, Game* game) {
+    _game = game;
+    _mainPanel.AddElement(std::make_unique<BuildMenuButton>(screenSize.x - 110, screenSize.y - 110, 100, 100, true, resourceManager.GetGameTexture("build_menu_button"), &_buildMenu));
+    _mainPanel.SetVisibility(true);
+    _buildMenu.AddElement(std::make_unique<CloseButton>(screenSize.x - 40, screenSize.y - 160, 35, 35, true, resourceManager.GetGameTexture("close_button"), &_buildMenu));
+    _buildMenu.AddElement(std::make_unique<BuildCategoryButton>(screenSize.x - 380, screenSize.y - 138, 110, 30, true, resourceManager.GetGameTexture("storage_category_button"), &_storageMenu, &_buildMenu));
+    _buildMenu.AddElement(std::make_unique<BuildCategoryButton>(screenSize.x - 490, screenSize.y - 140, 90, 25, true, resourceManager.GetGameTexture("house_category_button"), &_houseMenu, &_buildMenu));
+    _buildMenu.LinkPanel(&_storageMenu);
+    _buildMenu.LinkPanel(&_houseMenu);
+    _houseMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 490, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("lumberjack_house"), BuildingType::LumberjackHouse, _game));
+    _houseMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 390, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("miner_house"), BuildingType::MinerHouse, _game));
+    _storageMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 490, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("wood_storage"), BuildingType::WoodStorage, _game));
+    _storageMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 390, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("stone_storage"), BuildingType::StoneStorage, _game));
+    _storageMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 290, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("farm"), BuildingType::Farm, _game));
 }
 
-void UI::AddElement(std::unique_ptr<UIElement> element) {
-    _uiElements.push_back(std::move(element));
+void UI::Draw() {
+    _mainPanel.Draw();
+    _buildMenu.Draw();
+    _storageMenu.Draw();
+    _houseMenu.Draw();
 }
 
-UIElement* UI::GetElement(size_t id) {
-    //dynamic_cast<UIButton*>(element.get())
-    return _uiElements[id].get();
+void UI::Update() {
+    Vector2 mousePosition = GetMousePosition();
+    _mainPanel.Update(mousePosition);
+    _buildMenu.Update(mousePosition);
+    _storageMenu.Update(mousePosition);
+    _houseMenu.Update(mousePosition);
 }
-
-void UI::DrawAll() const {
-    for (const auto& elem : _uiElements) {
-        elem->Draw();
-    }
-}
-
-void UI::UpdateAll() {
-    if (_uiElements[0]->BtnPressed()) {
-//        _uiElements[0]->SetVisibility(true);
-        _uiElements[1]->SetVisibility(true);
-    } else _uiElements[1]->SetVisibility(false);
-    for (const auto& elem : _uiElements) {
-        elem->Update();
-    }
-}
-
-//bool UI::BuildMenuBtnPressed() const {
-//    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(),
-//                                                                          Rectangle{_uiElements[0]->GetPosition().x,
-//                                                                                    _uiElements[0]->GetPosition().y,
-//                                                                                    _uiElements[0]->GetSize().x,
-//                                                                                    _uiElements[0]->GetSize().y})) {
-//        std::cout << "Btn Pressed\n";
-//        return true;
-//    }
-//    return false;
-//}

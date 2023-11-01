@@ -15,6 +15,7 @@ add_executable(Village main.cpp
         Map.cpp
         Map.h
         mathFunctions.h
+        BuildingType.h
 )
 
 find_package(raylib 4.2.0 REQUIRED)

@@ -31,7 +31,7 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 21,
+				"line" : 22,
 				"parent" : 0
 			}
 		]
@@ -125,7 +125,8 @@
 				6,
 				8,
 				10,
-				11
+				11,
+				12
 			]
 		}
 	],
@@ -196,6 +197,11 @@
 		{
 			"backtrace" : 1,
 			"path" : "mathFunctions.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "BuildingType.h",
 			"sourceGroupIndex" : 1
 		}
 	],

@@ -2,24 +2,26 @@
 // Created by Григорий on 08.10.2023.
 //
 
+
 #ifndef VILLAGE_UIELEMENT_H
 #define VILLAGE_UIELEMENT_H
 #include "raylib.h"
 #include "string"
+#include "BuildingType.h"
+class Game;
 
 class UIElement {
 protected:
     Vector2 _position;
     Vector2 _size;
     bool _visible;
-    bool _pressed = false;
     Texture2D _sprite;
 public:
     UIElement(float x, float y, float w, float h, bool visibility, Texture2D texture);
     UIElement(float x, float y, float w, float h, bool visibility);
 
     virtual void Draw(); // Отрисовка элемента UI
-    virtual void Update() = 0; // Обновление логики элемента
+    virtual void Update(); // Обновление логики элемента
 
     void SetVisibility(bool value);
     bool IsVisible() const;
@@ -27,39 +29,77 @@ public:
     Vector2 GetSize() const;
     Texture2D GetTexture() const;
     void SetPosition(float x, float y);
-    bool BtnPressed();
-    bool BtnUnpressed();
 };
 
 class UIButton : public UIElement {
-private:
-    std::string _text;
+protected:
+    std::function<void()> _onClickFunc;
 public:
-    UIButton(float x, float y, float w, float h, bool visibility, Texture2D texture, const std::string& txt);
+    UIButton(float x, float y, float w, float h, bool visibility, Texture2D texture, std::function<void()> onClick);
 
-//    void Draw() override;
     void Update() override;
 
-    // Другие утилиты и методы для UIButton...
+    void OnClick();
 };
 
-class BuildMenuBtn : public UIElement {
+class UIPanel {
+protected:
+    bool _visible = false;
+    std::vector<std::unique_ptr<UIButton>> _elements;
 public:
-    BuildMenuBtn(float x, float y, float w, float h, bool visibility, Texture2D texture);
-//    void Draw() override;
-    void Update() override;
+    virtual void AddElement(std::unique_ptr<UIButton> element);
+    UIElement* GetElement(size_t id);
+    void Update(const Vector2& mousePosition);
+    virtual void Draw();
+    virtual void SetVisibility(bool value);
 };
 
-class BuildMenu: public UIElement {
+class BuildMenuButton : public UIButton {
 private:
-    std::vector<std::unique_ptr<UIElement>> _elements;
+    UIPanel* _buildMenuPanel;
 public:
-    BuildMenu(float x, float y, float w, float h, bool visibility);
-    void AddBuildMenuElement(std::unique_ptr<UIElement> element);
-    UIElement* GetBuildMenuElement(size_t id);
-    void Update() override;
+    BuildMenuButton(float x, float y, float w, float h, bool visibility, Texture2D texture, UIPanel* panel);
+    void OpenMenu();
+};
+
+class BuildMenuPanel: public UIPanel {
+private:
+    std::vector<UIPanel*> _linkedPanels;
+public:
+    void HideAllCategoriesExcept(UIButton* visiblePanel);
+    void LinkPanel(UIPanel* panel);
     void Draw() override;
+    void SetVisibility(bool value) override;
 };
 
+class BuildCategoryPanel: public UIPanel {
+public:
 
+};
+
+class BuildCategoryButton: public UIButton {
+private:
+    UIPanel* _categoryPanel;
+    BuildMenuPanel* _parentUI;
+public:
+    BuildCategoryButton(float x, float y, float w, float h, bool visibility, Texture2D texture, UIPanel* panel, BuildMenuPanel* parent);
+    void OpenCategory();
+    UIPanel* GetCategory() const;
+    void SetVisibility(bool value);
+};
+
+class BuildingButton: public UIButton {
+private:
+    BuildingType _buildingType;
+    Game* _game;
+public:
+    BuildingButton(float x, float y, float w, float h, bool visibility, Texture2D texture, BuildingType type, Game* game);
+    BuildingType GetBuildingType() const;
+    void Build();
+};
+
+class CloseButton: public UIButton {
+public:
+    CloseButton(float x, float y, float w, float h, bool visibility, Texture2D texture, UIPanel* panelToClose);
+};
 #endif //VILLAGE_UIELEMENT_H

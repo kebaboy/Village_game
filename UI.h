@@ -8,19 +8,23 @@
 #include "memory"
 #include "UIElement.h"
 #include "ResourceManager.h"
+class Game;
 
 class UI {
 private:
-    std::vector<std::unique_ptr<UIElement>> _uiElements;
+    UIPanel _mainPanel;
+    BuildMenuPanel _buildMenu;
+    BuildCategoryPanel _storageMenu;
+    BuildCategoryPanel _houseMenu;
+
+    Game* _game;
 public:
-    void Initialize(Vector2 screenSize, ResourceManager& resourceManager);
+    void Initialize(Vector2 screenSize, ResourceManager& resourceManager, Game* game);
     void AddElement(std::unique_ptr<UIElement> element);
     void RemoveElement(/*...*/);
     UIElement* GetElement(size_t id);
-    void DrawAll() const;
-    void UpdateAll();
-//    bool BuildMenuBtnPressed() const;
+    void Draw();
+    void Update();
 };
-
 
 #endif //VILLAGE_UI_H
