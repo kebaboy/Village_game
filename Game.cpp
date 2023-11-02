@@ -23,6 +23,7 @@ void Game::Initialize() {
     _resourceManager.LoadGameTexture("stone", "stone.png");
     _resourceManager.LoadGameTexture("lumberjack", "lumberjack.png");
     _resourceManager.LoadGameTexture("miner", "miner.png");
+    _resourceManager.LoadGameTexture("farmer", "farmer.png");
     _resourceManager.LoadGameTexture("wood_storage", "wood-storage.png");
     _resourceManager.LoadGameTexture("stone_storage", "stone-storage.png");
     _resourceManager.LoadGameTexture("farm", "farm.png");
@@ -65,7 +66,7 @@ void Game::Update() {
     for (auto& ws : _woodStorages) {
         woodStorages.push_back(&ws);
     }
-    for (auto& lumberjack : _lumberjasks) {
+    for (auto& lumberjack : _lumberjacks) {
         lumberjack.Update(woodStorages, _map);
     }
     std::vector<Storage*> stoneStorages;
@@ -75,8 +76,12 @@ void Game::Update() {
     for (auto& miner : _miners) {
         miner.Update(stoneStorages, _map);
     }
+    for (auto& farmer: _farmers) {
+        farmer.Update(_farms, _map);
+    }
     _woodCounter = CalculateTotalWood();
     _stoneCounter = CalculateTotalStone();
+    _foodCounter = CalculateTotalFood();
 }
 
 void Game::Draw() {
@@ -89,21 +94,34 @@ void Game::Draw() {
     for (const auto& house : _lumberjackHouses) {
         house.Draw();
     }
-    for (const auto& storage : _woodStorages) {
-        storage.Draw();
-    }
-    for (const auto& lumberjack : _lumberjasks) {
-        lumberjack.Draw();
-    }
     for (const auto& house : _minerHouses) {
         house.Draw();
+    }
+    for (const auto& house : _farmerHouses) {
+        house.Draw();
+    }
+
+    for (const auto& storage : _woodStorages) {
+        storage.Draw();
     }
     for (const auto& storage : _stoneStorages) {
         storage.Draw();
     }
-    for (const auto& miner : _miners) {
-        miner.Draw();
+    for (const auto& farm : _farms) {
+        farm.Draw();
     }
+
+    for (const auto& worker : _lumberjacks) {
+        worker.Draw();
+    }
+    for (const auto& worker : _miners) {
+        worker.Draw();
+    }
+    for (const auto& worker : _farmers) {
+        worker.Draw();
+    }
+
+
     for (const auto& tree : _trees) {
         tree.Draw();
     }
@@ -119,19 +137,25 @@ void Game::Draw() {
             case BuildingType::StoneStorage:
                 DrawTexturePro(_resourceManager.GetGameTexture("stone_storage"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("stone_storage").width, (float)_resourceManager.GetGameTexture("stone_storage").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 150.0f, 150.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
                 break;
+            case BuildingType::Farm:
+                DrawTexturePro(_resourceManager.GetGameTexture("farm"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("farm").width, (float)_resourceManager.GetGameTexture("farm").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 150.0f, 150.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
+                break;
             case BuildingType::LumberjackHouse:
                 DrawTexturePro(_resourceManager.GetGameTexture("lumberjack_house"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("lumberjack_house").width, (float)_resourceManager.GetGameTexture("lumberjack_house").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 100.0f, 100.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
                 break;
             case BuildingType::MinerHouse:
                 DrawTexturePro(_resourceManager.GetGameTexture("miner_house"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("miner_house").width, (float)_resourceManager.GetGameTexture("miner_house").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 100.0f, 100.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
                 break;
+            case BuildingType::FarmerHouse:
+                DrawTexturePro(_resourceManager.GetGameTexture("miner_house"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("miner_house").width, (float)_resourceManager.GetGameTexture("miner_house").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 100.0f, 100.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
+                break;
         }
     }
     _ui.Draw();
     char buffer[50];
-    snprintf(buffer, sizeof(buffer), "Wood: %d / %d\nStone: %d / %d", (int)_woodCounter.x, (int)_woodCounter.y, (int)_stoneCounter.x, (int)_stoneCounter.y);
+    snprintf(buffer, sizeof(buffer), "Wood: %d / %d\nStone: %d / %d\nFood: %d / %d", (int)_woodCounter.x, (int)_woodCounter.y, (int)_stoneCounter.x, (int)_stoneCounter.y, (int)_foodCounter.x, (int)_foodCounter.y);
     DrawText(buffer, 20, 20, 20, WHITE);
-    DrawFPS(20, 80);
+    DrawFPS(20, 110);
 
     EndDrawing();
 }
@@ -155,18 +179,24 @@ void Game::PlaceBuilding(Vector2 position) {
         case BuildingType::StoneStorage:
             _stoneStorages.push_back(StoneStorage(worldPos, _resourceManager.GetGameTexture("stone_storage")));
             break;
-//        case BuildingType::Farm:
+        case BuildingType::Farm:
+            _farms.push_back(Farm(worldPos, _resourceManager.GetGameTexture("farm")));
+            break;
         case BuildingType::LumberjackHouse:
             _lumberjackHouses.push_back(LumberjackHouse(worldPos, _resourceManager.GetGameTexture("lumberjack_house")));
-            _lumberjasks.push_back(Lumberjack(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("lumberjack"), worldPos));
-            _lumberjasks.back().SetHomePosition(worldPos);
+            _lumberjacks.push_back(Lumberjack(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("lumberjack"), worldPos));
+            _lumberjacks.back().SetHomePosition(worldPos);
             break;
         case BuildingType::MinerHouse:
             _minerHouses.push_back(MinerHouse(worldPos, _resourceManager.GetGameTexture("miner_house")));
             _miners.push_back(Miner(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("miner"), worldPos));
             _miners.back().SetHomePosition(worldPos);
             break;
-
+        case BuildingType::FarmerHouse:
+            _farmerHouses.push_back(FarmerHouse(worldPos, _resourceManager.GetGameTexture("miner_house")));
+            _farmers.push_back(Farmer(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("farmer"), worldPos));
+            _farmers.back().SetHomePosition(worldPos);
+            break;
     }
     _buildingPlacingMode = false;
 }
@@ -213,4 +243,13 @@ Vector2 Game::CalculateTotalStone() {
         stoneCounter.y += storage.GetCapacity();
     }
     return stoneCounter;
+}
+Vector2 Game::CalculateTotalFood() {
+    Vector2 foodCounter = {0.0f, 0.0f};
+    if (_farms.empty()) return foodCounter;
+    for (auto& farm : _farms) {
+        foodCounter.x += farm.GetCurrentResourceCount();
+        foodCounter.y += farm.GetCapacity();
+    }
+    return foodCounter;
 }

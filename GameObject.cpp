@@ -4,6 +4,7 @@
 
 #include "GameObject.h"
 #include "ResourceManager.h"
+#include "iostream"
 
 ResourceManager resourceManager;
 
@@ -62,10 +63,18 @@ int MinerHouse::GetCostFood() const {return 10;}
 int MinerHouse::GetCostWood() const {return 50;}
 int MinerHouse::GetCostStone() const {return 70;}
 
+FarmerHouse::FarmerHouse(const Vector2 pos, const Texture2D sprite): WorkerHouse(pos, sprite) {}
+
+int FarmerHouse::GetCostFood() const {return 10;}
+int FarmerHouse::GetCostWood() const {return 50;}
+int FarmerHouse::GetCostStone() const {return 70;}
+
 
 Storage::Storage(const Vector2 pos, const Texture2D sprite): GameObject(pos, Vector2{150.0f, 150.0f}, sprite) {}
 
 bool Storage::AddResource(int amount) {
+
+    std::cout << _resourceCount << " + " << amount << " / " << _maxCapacity << "\n" << _position.x << " " << _position.y << "\n";
     if (_resourceCount + amount <= _maxCapacity) {
         _resourceCount += amount;
         return true;
@@ -89,7 +98,23 @@ WoodStorage::WoodStorage(const Vector2 pos, const Texture2D sprite): Storage(pos
 
 StoneStorage::StoneStorage(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {}
 
+Farm::Farm(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {}
 
+int Farm::GetFarmersCount() const {
+    return _farmersCount;
+}
+
+int Farm::GetMaxFarmersCount() const {
+    return _maxFarmersCount;
+}
+
+bool Farm::AddFarmer() {
+    _farmersCount++;
+}
+
+bool Farm::RemoveFarmer() {
+    _farmersCount--;
+}
 
 Tree::Tree(const Vector2 pos, const Vector2 size, const Texture2D sprite): GameObject(pos, size, sprite) {}
 
@@ -306,52 +331,120 @@ void Miner::Update(std::vector<Storage*>& stoneStorages, Map& map) {
             break;
 
     }
-//    Vector2 direction;
-//    float magnitude;
-//
-//    switch (_taskMode) {
-//        case TaskMode::COLLECTING:
-//            _choppingTime += GetFrameTime();
-//            if (_choppingTime >= _timeToChop) {
-//                woodCount += _choppingAmount;
-//                _taskMode = TaskMode::DELIVERING;
-//                _homePosition = _homePosition;
-//                _choppingTime = 0.0f;
+}
+
+Farmer::Farmer(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition), _taskMode(TaskMode::TO_FARM) {}
+
+void Farmer::Draw() const {
+    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
+}
+
+void Farmer::SetHomePosition(Vector2 pos) {
+    _homePosition = pos;
+}
+
+void Farmer::FindClosestFarm(std::vector<Farm>& farms) {
+    int closestFarmInd = -1;
+    float closestDistance = std::numeric_limits<float>::max();
+
+    for (size_t i = 0; i < farms.size(); i++) {
+//        std::cout << "POSITION: " << farms[i].GetPosition().x << " " << farms[i].GetPosition().y << " ";
+        if (!farms[i].isFull() && (farms[i].GetFarmersCount() < farms[i].GetMaxFarmersCount())) {
+            float distance = Vector2Distance(_position, farms[i].GetPosition());
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestFarmInd = i;
+            }
+        }
+    }
+//    std::cout << "\n";
+    _currentFarmInd = closestFarmInd;
+}
+
+void Farmer::Update(std::vector<Farm>& farms, Map& map) {
+    switch (_taskMode) {
+        case TaskMode::TO_FARM:
+            if (farms.empty()) {
+//                std::cout << "yes\n";
+                _taskMode = TaskMode::IDLE;
+                break;
+            }
+            FindClosestFarm(farms);
+//            std::cout << _currentFarmInd << "\n";
+            if (_currentFarmInd == -1) {
+//                std::cout << "yes2\n";
+                _taskMode = TaskMode::IDLE;
+                break;
+            }
+            MoveForwardTarget(farms[_currentFarmInd].GetPosition());
+//            std::cout << "go to farm\n";
+            if (IsAtTarget(farms[_currentFarmInd].GetPosition())) {
+                _taskMode = TaskMode::COLLECTING;
+                farms[_currentFarmInd].AddFarmer();
+//                std::cout << "am here and added\n";
+//                std::cout << "farmPosition: " << farms[_currentFarmInd].GetPosition().x << " " << farms[_currentFarmInd].GetPosition().y << "\n";
+            }
+            break;
+        case TaskMode::TO_HOME:
+            MoveForwardTarget(_homePosition);
+            if (IsAtTarget(_homePosition)) {
+                _taskMode = TaskMode::RESTING;
+            }
+            break;
+        case TaskMode::COLLECTING:
+//            for (auto& farm : farms) {
+//                std::cout << "POSITION: " << farm->GetPosition().x << " " << farm->GetPosition().y << " ";
 //            }
-//            break;
-//
-//        case TaskMode::DELIVERING:
-//
-//
-//        case TaskMode::TO_TREE:
-//        case TaskMode::TO_HOME:
-//            direction = {
-//                    _homePosition.x - _position.x,
-//                    _homePosition.y - _position.y
-//            };
-//
-//            magnitude = sqrt(direction.x * direction.x + direction.y * direction.y);
-//            direction.x /= magnitude;
-//            direction.y /= magnitude;
-//
-//            _position.x += direction.x * _speed;
-//            _position.y += direction.y * _speed;
-//
-//            if (Vector2Distance(_position, _homePosition) < _speed) {
-//                _position = _homePosition;
-//                if (_taskMode == TaskMode::TO_TREE) {
-//                    _taskMode = TaskMode::COLLECTING;
-//                    _currentTree = _homePosition;
-//                    _homePosition = _homePosition; // двигаемся обратно к начальной позиции
-//                } else {
-//                    _taskMode = TaskMode::TO_TREE;
-//                    _homePosition = _currentTree;
-//                }
-//            }
-//            break;
-//
-//        default:
-//            // Обработка неизвестного режима задачи, если таковой имеется.
-//            break;
-//    }
+//            std::cout << "\n";
+            if (farms[_currentFarmInd].isFull()) {
+                _collectingTarget = Vector2{-1, -1};
+                if (_currentFarmInd != -1) {
+                    farms[_currentFarmInd].RemoveFarmer();
+                    _currentFarmInd = -1;
+                }
+                _taskMode = TaskMode::TO_FARM;
+            } else {
+                if (IsEqual(_collectingTarget, Vector2{-1, -1})) {
+                    _collectingTarget = {(float)GetRandomValue(farms[_currentFarmInd].GetPosition().x, farms[_currentFarmInd].GetPosition().x + farms[_currentFarmInd].GetSize().x), (float)GetRandomValue(farms[_currentFarmInd].GetPosition().y, farms[_currentFarmInd].GetPosition().y + farms[_currentFarmInd].GetSize().y)};;
+                }
+                MoveForwardTarget(_collectingTarget);
+                if (IsAtTarget(_collectingTarget)) {
+                    _harvestingTime += GetFrameTime();
+                    if (_harvestingTime >= _timeToHarvest) {
+                        if (farms[_currentFarmInd].AddResource(_resourceAmount)) {
+                            DecreaseEnergy();
+                            if (_energy <= 0) {
+                                if (_currentFarmInd != -1) {
+                                    farms[_currentFarmInd].RemoveFarmer();
+                                    _currentFarmInd = -1;
+                                }
+                                _collectingTarget = Vector2{-1, -1};
+                                _taskMode = TaskMode::TO_HOME;
+                            }
+                            _collectingTarget = {(float)GetRandomValue(farms[_currentFarmInd].GetPosition().x, farms[_currentFarmInd].GetPosition().x + farms[_currentFarmInd].GetSize().x), (float)GetRandomValue(farms[_currentFarmInd].GetPosition().y, farms[_currentFarmInd].GetPosition().y + farms[_currentFarmInd].GetSize().y)};
+                        }
+                        _harvestingTime = 0.0f;
+                    }
+                }
+            }
+            break;
+        case TaskMode::RESTING:
+            _restingTime += GetFrameTime();
+            if (_restingTime >= _timeToRest) {
+                _taskMode = TaskMode::TO_FARM;
+                _energy = _maxEnergy;
+                _restingTime = 0.0f;
+            }
+            break;
+        case TaskMode::IDLE:
+            if (IsAtTarget(_homePosition)) {
+                if (_energy != _maxEnergy) _restingTime += GetFrameTime();
+                if (_restingTime >= _timeToRest) {
+                    _energy = _maxEnergy;
+                    _restingTime = 0.0f;
+                }
+                _taskMode = TaskMode::TO_FARM;
+            } else MoveForwardTarget(_homePosition);
+            break;
+    }
 }

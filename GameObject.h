@@ -66,6 +66,14 @@ public:
     int GetCostWood() const override;
     int GetCostStone() const override;
 };
+class FarmerHouse: public WorkerHouse {
+public:
+    FarmerHouse(const Vector2 pos, const Texture2D sprite);
+
+    int GetCostFood() const override;
+    int GetCostWood() const override;
+    int GetCostStone() const override;
+};
 
 
 
@@ -92,6 +100,17 @@ class StoneStorage: public Storage {
 public:
     StoneStorage(const Vector2 pos, const Texture2D sprite);
 };
+class Farm: public Storage {
+private:
+    int _farmersCount = 0;
+    int _maxFarmersCount = 2;
+public:
+    Farm(const Vector2 pos, const Texture2D sprite);
+    int GetFarmersCount() const;
+    int GetMaxFarmersCount() const;
+    bool AddFarmer();
+    bool RemoveFarmer();
+};
 
 
 class Worker: public GameObject {
@@ -110,7 +129,7 @@ public:
 //
 //    std::vector<Storage*> storages(woodStorages.begin(), woodStorages.end());
 //    npc.FindClosestStorage(storages);
-    Vector2 FindClosestStorage(const std::vector<Storage*>& storages);
+    virtual Vector2 FindClosestStorage(const std::vector<Storage*>& storages);
     bool AddResourceToStorage(std::vector<Storage*>& storages);
     void MoveForwardTarget(const Vector2 target);
     bool IsAtTarget(const Vector2 target);
@@ -122,6 +141,7 @@ public:
 enum class TaskMode {
     TO_TREE,
     TO_STONE,
+    TO_FARM,
     TO_HOME,
     COLLECTING,
     RESTING,
@@ -159,6 +179,26 @@ public:
 
     void Draw() const override;
     void Update(std::vector<Storage*>& stoneStorages, Map& map);
+};
+
+class Farmer: public Worker {
+private:
+    TaskMode _taskMode;
+    int _currentFarmInd = -1;
+    Vector2 _collectingTarget = {-1, -1};
+
+    float _harvestingTime = 0.0f;
+    float _timeToHarvest = 6.0f;
+    float _restingTime = 0.0f;
+    float _timeToRest = 5.0f;
+public:
+    Farmer(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition);
+
+    void FindClosestFarm(std::vector<Farm>& farms);
+    void SetHomePosition(Vector2 pos);
+
+    void Draw() const override;
+    void Update(std::vector<Farm>& farmStorages, Map& map);
 };
 
 class Tree: public GameObject {

@@ -25,18 +25,22 @@ private:
 
     std::vector<LumberjackHouse> _lumberjackHouses;
     std::vector<MinerHouse> _minerHouses;
+    std::vector<FarmerHouse> _farmerHouses;
 
     std::vector<WoodStorage> _woodStorages;
     std::vector<StoneStorage> _stoneStorages;
+    std::vector<Farm> _farms;
 
-    std::vector<Lumberjack> _lumberjasks;
+    std::vector<Lumberjack> _lumberjacks;
     std::vector<Miner> _miners;
+    std::vector<Farmer> _farmers;
 
     bool _buildingPlacingMode = false;
     BuildingType _previewBuildingType;
 
     Vector2 _woodCounter;
     Vector2 _stoneCounter;
+    Vector2 _foodCounter;
 public:
     Game();
     void Initialize();
@@ -51,6 +55,7 @@ public:
     Vector2 GetMapSize() const;
     Vector2 CalculateTotalWood();
     Vector2 CalculateTotalStone();
+    Vector2 CalculateTotalFood();
 };
 
 

@@ -8,6 +8,7 @@
 enum class BuildingType {
     LumberjackHouse,
     MinerHouse,
+    FarmerHouse,
     WoodStorage,
     StoneStorage,
     Farm,
