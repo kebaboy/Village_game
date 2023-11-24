@@ -19,6 +19,7 @@ void Game::Initialize() {
     _resourceManager.LoadGameTexture("miner_house", "miner-house.png");
     _resourceManager.LoadGameTexture("storage_category_button", "storage_category_button.png");
     _resourceManager.LoadGameTexture("house_category_button", "house_category_button.png");
+    _resourceManager.LoadGameTexture("defence_category_button", "defence_category_button.png");
     _resourceManager.LoadGameTexture("tree", "tree.png");
     _resourceManager.LoadGameTexture("stone", "stone.png");
     _resourceManager.LoadGameTexture("lumberjack", "lumberjack.png");
@@ -29,6 +30,8 @@ void Game::Initialize() {
     _resourceManager.LoadGameTexture("farm", "farm.png");
     _resourceManager.LoadGameTexture("build_menu_button", "build_menu_button.png");
     _resourceManager.LoadGameTexture("close_button", "close_button.png");
+    _resourceManager.LoadGameTexture("barrack", "barrack.png");
+    _resourceManager.LoadGameTexture("knight", "knight.png");
     _map.Generate();
     _player.SetTexture(_resourceManager.GetGameTexture("player"));
     _camera = {0};
@@ -79,6 +82,12 @@ void Game::Update() {
     for (auto& farmer: _farmers) {
         farmer.Update(_farms, _map);
     }
+    for (auto& barrack: _barracks) {
+        barrack.Update(_resourceManager);
+    }
+
+
+
     _woodCounter = CalculateTotalWood();
     _stoneCounter = CalculateTotalStone();
     _foodCounter = CalculateTotalFood();
@@ -120,7 +129,9 @@ void Game::Draw() {
     for (const auto& worker : _farmers) {
         worker.Draw();
     }
-
+    for (const auto& barrack : _barracks) {
+        barrack.Draw();
+    }
 
     for (const auto& tree : _trees) {
         tree.Draw();
@@ -148,6 +159,9 @@ void Game::Draw() {
                 break;
             case BuildingType::FarmerHouse:
                 DrawTexturePro(_resourceManager.GetGameTexture("miner_house"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("miner_house").width, (float)_resourceManager.GetGameTexture("miner_house").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 100.0f, 100.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
+                break;
+            case BuildingType::Barrack:
+                DrawTexturePro(_resourceManager.GetGameTexture("barrack"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("barrack").width, (float)_resourceManager.GetGameTexture("barrack").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 150.0f, 150.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
                 break;
         }
     }
@@ -196,6 +210,9 @@ void Game::PlaceBuilding(Vector2 position) {
             _farmerHouses.push_back(FarmerHouse(worldPos, _resourceManager.GetGameTexture("miner_house")));
             _farmers.push_back(Farmer(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("farmer"), worldPos));
             _farmers.back().SetHomePosition(worldPos);
+            break;
+        case BuildingType::Barrack:
+            _barracks.push_back(Barrack(worldPos, _resourceManager.GetGameTexture("barrack")));
             break;
     }
     _buildingPlacingMode = false;

@@ -6,8 +6,6 @@
 #include "ResourceManager.h"
 #include "iostream"
 
-ResourceManager resourceManager;
-
 GameObject::GameObject(const Vector2 pos, const Vector2 size): _position(pos), _size(size) {}
 
 GameObject::GameObject(const Vector2 pos, const Vector2 size, const Texture2D sprite): _position(pos), _size(size),
@@ -116,6 +114,31 @@ bool Farm::RemoveFarmer() {
     _farmersCount--;
 }
 
+Barrack::Barrack(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {
+    _resourceCount = 0;
+    _maxCapacity = 5;
+}
+
+void Barrack::Update(ResourceManager& resourceManager) {
+    if (CheckCollisionPointRec(GetMousePosition(), Rectangle {_position.x, _position.y, _size.x, _size.y}) &&
+            IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        if (AddResource(1)) {
+            _knights.push_back(Knight(Vector2{_position.x + _size.x / 2, _position.y + _size.y / 2}, resourceManager.GetGameTexture("knight"), Vector2{_position.x + _size.x / 2, _position.y + _size.y / 2}));
+        }
+
+    }
+    for (auto& knight: _knights) {
+        knight.Update();
+    }
+}
+
+void Barrack::Draw() const {
+    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
+    for (const auto& knight: _knights) {
+        knight.Draw();
+    }
+}
+
 Tree::Tree(const Vector2 pos, const Vector2 size, const Texture2D sprite): GameObject(pos, size, sprite) {}
 
 
@@ -175,11 +198,7 @@ void Worker::DecreaseEnergy(int delta) {
 }
 
 
-Lumberjack::Lumberjack(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) ,_taskMode(TaskMode::TO_TREE) {};
-
-void Lumberjack::Draw() const {
-    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
-}
+Lumberjack::Lumberjack(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) {_taskMode = TaskMode::TO_TREE;};
 
 void Lumberjack::SetHomePosition(Vector2 pos) {
     _homePosition = pos;
@@ -254,11 +273,7 @@ void Lumberjack::Update(std::vector<Storage*>& woodStorages, Map& map) {
     }
 }
 
-Miner::Miner(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) ,_taskMode(TaskMode::TO_STONE) {};
-
-void Miner::Draw() const {
-    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
-}
+Miner::Miner(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) {_taskMode = TaskMode::TO_STONE;};
 
 void Miner::SetHomePosition(Vector2 pos) {
     _homePosition = pos;
@@ -333,11 +348,7 @@ void Miner::Update(std::vector<Storage*>& stoneStorages, Map& map) {
     }
 }
 
-Farmer::Farmer(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition), _taskMode(TaskMode::TO_FARM) {}
-
-void Farmer::Draw() const {
-    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
-}
+Farmer::Farmer(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) {_taskMode = TaskMode::TO_FARM;}
 
 void Farmer::SetHomePosition(Vector2 pos) {
     _homePosition = pos;
@@ -434,7 +445,7 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
                 _taskMode = TaskMode::TO_FARM;
                 _energy = _maxEnergy;
                 _restingTime = 0.0f;
-            }
+                }
             break;
         case TaskMode::IDLE:
             if (IsAtTarget(_homePosition)) {
@@ -445,6 +456,34 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
                 }
                 _taskMode = TaskMode::TO_FARM;
             } else MoveForwardTarget(_homePosition);
+            break;
+    }
+}
+
+Knight::Knight(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) {_taskMode = TaskMode::PATROLLING; _size = Vector2 {50.0f, 50.0f}; _patrolPoint = GetRandomPatrolPoint();}
+
+Vector2 Knight::GetRandomPatrolPoint() {
+    // Генерация случайного смещения относительно позиции казармы
+    float offsetX = GetRandomValue(-100, 100);
+    float offsetY = GetRandomValue(-100, 100);
+
+    // Возвращение новой точки патрулирования вокруг казармы
+    return Vector2 {_homePosition.x + offsetX, _homePosition.y + offsetY};
+}
+
+void Knight::Update() {
+    switch (_taskMode) {
+        case TaskMode::PATROLLING:
+            if (IsAtTarget(_patrolPoint)) {
+                if (_waitTime > 0.0f) {
+                    _waitTime -= GetFrameTime();
+                } else {
+                    _patrolPoint = GetRandomPatrolPoint();
+                    _waitTime = 3.0f;
+                }
+            } else {
+                MoveForwardTarget(_patrolPoint);
+            }
             break;
     }
 }

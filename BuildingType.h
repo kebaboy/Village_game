@@ -12,6 +12,7 @@ enum class BuildingType {
     WoodStorage,
     StoneStorage,
     Farm,
+    Barrack,
 };
 
 #endif //VILLAGE_BUILDINGTYPE_H

@@ -16,6 +16,7 @@ private:
     BuildMenuPanel _buildMenu;
     BuildCategoryPanel _storageMenu;
     BuildCategoryPanel _houseMenu;
+    BuildCategoryPanel _defenceMenu;
 
     Game* _game;
 public:

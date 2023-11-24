@@ -9,8 +9,8 @@
 UIElement::UIElement(float x, float y, float w, float h, bool visibility, Texture2D texture)
         : _position({x, y}), _size({w, h}), _visible(visibility), _sprite(texture) {}
 
-        UIElement::UIElement(float x, float y, float w, float h, bool visibility)
-        : _position({x, y}), _size({w, h}), _visible(visibility) {}
+UIElement::UIElement(float x, float y, float w, float h, bool visibility)
+: _position({x, y}), _size({w, h}), _visible(visibility) {}
 
 void UIElement::Draw() {
     if (!_visible) return;

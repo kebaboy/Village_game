@@ -30,6 +30,7 @@ private:
     std::vector<WoodStorage> _woodStorages;
     std::vector<StoneStorage> _stoneStorages;
     std::vector<Farm> _farms;
+    std::vector<Barrack> _barracks;
 
     std::vector<Lumberjack> _lumberjacks;
     std::vector<Miner> _miners;
