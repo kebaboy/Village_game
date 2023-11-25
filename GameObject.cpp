@@ -33,6 +33,29 @@ void GameObject::SetPosition(Vector2 position) {
     _position = position;
 }
 
+MovingGameObject::MovingGameObject(const Vector2 pos, const Vector2 size, const Texture2D sprite): GameObject(pos, size, sprite) {}
+
+void MovingGameObject::MoveForwardTarget(const Vector2 target) {
+    Vector2 direction = {
+            target.x - _position.x,
+            target.y - _position.y
+    };
+
+    float magnitude = sqrt(direction.x * direction.x + direction.y * direction.y);
+    direction.x /= magnitude;
+    direction.y /= magnitude;
+
+    _position.x += direction.x * _speed;
+    _position.y += direction.y * _speed;
+}
+
+bool MovingGameObject::IsAtTarget(const Vector2 target) {
+    if (Vector2Distance(_position, target) < _speed) {
+        return true;
+    }
+    return false;
+}
+
 Player::Player(const Vector2 pos, const Vector2 size) : GameObject(pos, size) {}
 
 void Player::Draw() const {
@@ -119,8 +142,9 @@ Barrack::Barrack(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite
     _maxCapacity = 5;
 }
 
-void Barrack::Update(ResourceManager& resourceManager) {
-    if (CheckCollisionPointRec(GetMousePosition(), Rectangle {_position.x, _position.y, _size.x, _size.y}) &&
+void Barrack::Update(ResourceManager& resourceManager, Camera2D& camera) {
+    Vector2 pos = GetWorldToScreen2D(_position, camera);
+    if (CheckCollisionPointRec(GetMousePosition(), Rectangle {pos.x, pos.y, _size.x, _size.y}) &&
             IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         if (AddResource(1)) {
             _knights.push_back(Knight(Vector2{_position.x + _size.x / 2, _position.y + _size.y / 2}, resourceManager.GetGameTexture("knight"), Vector2{_position.x + _size.x / 2, _position.y + _size.y / 2}));
@@ -143,7 +167,7 @@ Tree::Tree(const Vector2 pos, const Vector2 size, const Texture2D sprite): GameO
 
 
 
-Worker::Worker(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): GameObject(pos, Vector2 {80.0f, 50.0f}, sprite), _homePosition(homePosition) {};
+Worker::Worker(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): MovingGameObject(pos, Vector2 {80.0f, 50.0f}, sprite), _homePosition(homePosition) {};
 
 Vector2 Worker::FindClosestStorage(const std::vector<Storage*> &storages) {
     Vector2 closestPosition = { -1, -1 };
@@ -172,37 +196,17 @@ bool Worker::AddResourceToStorage(std::vector<Storage*> &storages) {
     return false;
 }
 
-void Worker::MoveForwardTarget(const Vector2 target) {
-    Vector2 direction = {
-            target.x - _position.x,
-            target.y - _position.y
-    };
-
-    float magnitude = sqrt(direction.x * direction.x + direction.y * direction.y);
-    direction.x /= magnitude;
-    direction.y /= magnitude;
-
-    _position.x += direction.x * _speed;
-    _position.y += direction.y * _speed;
-}
-
-bool Worker::IsAtTarget(const Vector2 target) {
-    if (Vector2Distance(_position, target) < _speed) {
-        return true;
-    }
-    return false;
-}
 
 void Worker::DecreaseEnergy(int delta) {
     _energy -= delta;
 }
 
-
-Lumberjack::Lumberjack(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) {_taskMode = TaskMode::TO_TREE;};
-
-void Lumberjack::SetHomePosition(Vector2 pos) {
+void Worker::SetHomePosition(Vector2 pos) {
     _homePosition = pos;
 }
+
+
+Lumberjack::Lumberjack(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) {_taskMode = TaskMode::TO_TREE;};
 
 void Lumberjack::Update(std::vector<Storage*>& woodStorages, Map& map) {
     switch (_taskMode) {
@@ -219,10 +223,10 @@ void Lumberjack::Update(std::vector<Storage*>& woodStorages, Map& map) {
             }
             break;
         case TaskMode::COLLECTING:
-            _choppingTime += GetFrameTime();
-            if (_choppingTime >= _timeToChop) {
+            _collectingTime += GetFrameTime();
+            if (_collectingTime >= _timeToCollect) {
                 _taskMode = TaskMode::DELIVERING;
-                _choppingTime = 0.0f;
+                _collectingTime = 0.0f;
             }
             break;
         case TaskMode::RESTING:
@@ -275,10 +279,6 @@ void Lumberjack::Update(std::vector<Storage*>& woodStorages, Map& map) {
 
 Miner::Miner(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) {_taskMode = TaskMode::TO_STONE;};
 
-void Miner::SetHomePosition(Vector2 pos) {
-    _homePosition = pos;
-}
-
 void Miner::Update(std::vector<Storage*>& stoneStorages, Map& map) {
     switch (_taskMode) {
         case TaskMode::TO_STONE: {
@@ -294,10 +294,10 @@ void Miner::Update(std::vector<Storage*>& stoneStorages, Map& map) {
             }
             break;
         case TaskMode::COLLECTING:
-            _minningTime += GetFrameTime();
-            if (_minningTime >= _timeToMine) {
+            _collectingTime += GetFrameTime();
+            if (_collectingTime >= _timeToCollect) {
                 _taskMode = TaskMode::DELIVERING;
-                _minningTime = 0.0f;
+                _collectingTime = 0.0f;
             }
             break;
         case TaskMode::RESTING:
@@ -348,11 +348,7 @@ void Miner::Update(std::vector<Storage*>& stoneStorages, Map& map) {
     }
 }
 
-Farmer::Farmer(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) {_taskMode = TaskMode::TO_FARM;}
-
-void Farmer::SetHomePosition(Vector2 pos) {
-    _homePosition = pos;
-}
+Farmer::Farmer(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) {_taskMode = TaskMode::TO_FARM; _timeToCollect = 6.0f;}
 
 void Farmer::FindClosestFarm(std::vector<Farm>& farms) {
     int closestFarmInd = -1;
@@ -420,8 +416,8 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
                 }
                 MoveForwardTarget(_collectingTarget);
                 if (IsAtTarget(_collectingTarget)) {
-                    _harvestingTime += GetFrameTime();
-                    if (_harvestingTime >= _timeToHarvest) {
+                    _collectingTime += GetFrameTime();
+                    if (_collectingTime >= _timeToCollect) {
                         if (farms[_currentFarmInd].AddResource(_resourceAmount)) {
                             DecreaseEnergy();
                             if (_energy <= 0) {
@@ -434,7 +430,7 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
                             }
                             _collectingTarget = {(float)GetRandomValue(farms[_currentFarmInd].GetPosition().x, farms[_currentFarmInd].GetPosition().x + farms[_currentFarmInd].GetSize().x), (float)GetRandomValue(farms[_currentFarmInd].GetPosition().y, farms[_currentFarmInd].GetPosition().y + farms[_currentFarmInd].GetSize().y)};
                         }
-                        _harvestingTime = 0.0f;
+                        _collectingTime = 0.0f;
                     }
                 }
             }
@@ -460,7 +456,24 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
     }
 }
 
-Knight::Knight(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) {_taskMode = TaskMode::PATROLLING; _size = Vector2 {50.0f, 50.0f}; _patrolPoint = GetRandomPatrolPoint();}
+Warrior::Warrior(const Vector2 pos, const Texture2D texture): MovingGameObject(pos, Vector2 {50.0f, 50.0f}, texture) {}
+
+bool Warrior::IsAlive() const {
+    return _alive;
+}
+
+void Warrior::TakeDamage(int damage) {
+    _hp -= damage;
+    if (_hp <= 0) {
+        _alive = false;
+    }
+}
+
+void Warrior::Attack(Warrior &target) {
+    target.TakeDamage(_damage);
+}
+
+Knight::Knight(const Vector2 pos, const Texture2D sprite, const Vector2 barrackPosition): Warrior(pos, sprite), _barrackPosition(barrackPosition) {_taskMode = TaskMode::PATROLLING; _patrolPoint = GetRandomPatrolPoint();}
 
 Vector2 Knight::GetRandomPatrolPoint() {
     // Генерация случайного смещения относительно позиции казармы
@@ -468,7 +481,7 @@ Vector2 Knight::GetRandomPatrolPoint() {
     float offsetY = GetRandomValue(-100, 100);
 
     // Возвращение новой точки патрулирования вокруг казармы
-    return Vector2 {_homePosition.x + offsetX, _homePosition.y + offsetY};
+    return Vector2 {_barrackPosition.x + offsetX, _barrackPosition.y + offsetY};
 }
 
 void Knight::Update() {

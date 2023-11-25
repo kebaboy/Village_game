@@ -25,6 +25,15 @@ public:
     void SetPosition(Vector2 position);
 };
 
+class MovingGameObject: public GameObject {
+protected:
+    float _speed = 1.0f;
+public:
+    MovingGameObject(const Vector2 pos, const Vector2 size, const Texture2D sprite);
+    void MoveForwardTarget(const Vector2 target);
+    bool IsAtTarget(const Vector2 target);
+};
+
 class Player: public GameObject {
 private:
     const float _playerVelocity = 3.0f;
@@ -33,6 +42,7 @@ public:
     void Draw() const override;
     const float GetVelocity() const;
 };
+
 
 class WorkerHouse: public GameObject {
 protected:
@@ -122,55 +132,41 @@ enum class TaskMode {
     PATROLLING,
 };
 
-class Worker: public GameObject {
+class Worker: public MovingGameObject {
 protected:
     TaskMode _taskMode;
 
-    float _speed = 1.0f;
     float _maxEnergy = 5;
     float  _energy = _maxEnergy;
     float _resourceAmount = 1.0f;
+
+    float _restingTime = 0.0f;
+    float _timeToRest = 5.0f;
+    float _collectingTime = 0.0f;
+    float _timeToCollect = 3.0f;
 
     Vector2 _homePosition;
 public:
     Worker(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition);
 
-//    std::vector<WoodStorage> woodStorages;
-//    // ... добавление элементов ...
-//
-//    std::vector<Storage*> storages(woodStorages.begin(), woodStorages.end());
-//    npc.FindClosestStorage(storages);
     virtual Vector2 FindClosestStorage(const std::vector<Storage*>& storages);
     bool AddResourceToStorage(std::vector<Storage*>& storages);
-    void MoveForwardTarget(const Vector2 target);
-    bool IsAtTarget(const Vector2 target);
+    void SetHomePosition(Vector2 pos);
 
     void DecreaseEnergy(int delta = 1);
 };
 
 class Lumberjack : public Worker {
 private:
-    float _choppingTime = 0.0f;
-    float _timeToChop = 3.0f;
-    float _restingTime = 0.0f;
-    float _timeToRest = 5.0f;
 public:
     Lumberjack(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition);
-
-    void SetHomePosition(Vector2 pos);
 
     void Update(std::vector<Storage*>& woodStorages, Map& map);
 };
 class Miner : public Worker {
 private:
-    float _minningTime = 0.0f;
-    float _timeToMine = 3.0f;
-    float _restingTime = 0.0f;
-    float _timeToRest = 5.0f;
 public:
     Miner(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition);
-
-    void SetHomePosition(Vector2 pos);
 
     void Update(std::vector<Storage*>& stoneStorages, Map& map);
 };
@@ -179,40 +175,45 @@ class Farmer: public Worker {
 private:
     int _currentFarmInd = -1;
     Vector2 _collectingTarget = {-1, -1};
-
-    float _harvestingTime = 0.0f;
-    float _timeToHarvest = 6.0f;
-    float _restingTime = 0.0f;
-    float _timeToRest = 5.0f;
 public:
     Farmer(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition);
 
     void FindClosestFarm(std::vector<Farm>& farms);
-    void SetHomePosition(Vector2 pos);
 
     void Update(std::vector<Farm>& farmStorages, Map& map);
 };
 
-class Knight: public Worker {
-private:
-    int _hp = 5;
-    int _damage = 1;
+class Warrior: public MovingGameObject {
+protected:
+    TaskMode _taskMode;
+    float _hp = 5.0f;
+    float _damage = 1.0f;
     bool _alive = true;
+public:
+    Warrior(const Vector2 pos, const Texture2D sprite);
+    bool IsAlive() const;
+    virtual void TakeDamage(int damage);
+    virtual void Attack(Warrior& target);
+};
+
+class Knight: public Warrior {
+private:
     Vector2 _patrolPoint;
     float _waitTime = 3.0;
+    Vector2 _barrackPosition;
 public:
-    Knight(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition);
-    bool IsAlive() const;
+    Knight(const Vector2 pos, const Texture2D sprite, const Vector2 barrackPosition);
     Vector2 GetRandomPatrolPoint();
 
     void Update() override;
 };
+
 class Barrack: public Storage {
 private:
     std::vector<Knight> _knights;
 public:
     Barrack(const Vector2 pos, const Texture2D sprite);
-    void Update(ResourceManager& resourceManager);
+    void Update(ResourceManager& resourceManager, Camera2D& camera);
     void Draw() const override;
 };
 

@@ -83,7 +83,7 @@ void Game::Update() {
         farmer.Update(_farms, _map);
     }
     for (auto& barrack: _barracks) {
-        barrack.Update(_resourceManager);
+        barrack.Update(_resourceManager, _camera);
     }
 
 
