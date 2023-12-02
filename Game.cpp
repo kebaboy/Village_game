@@ -7,7 +7,8 @@
 
 Game::Game() : _screenWidth(1000), _screenHeight(650),
                 _map(40, 30, 100),
-                _player(Vector2{ (float)(500/2), (float)(500/2)}, Vector2{float(50), float(50)})
+                _player(Vector2{ (float)(500/2), (float)(500/2)}, Vector2{float(50), float(50)}),
+               _townhall(Vector2{500.0f, 500.0f})
                 {}
 
 void Game::Initialize() {
@@ -17,6 +18,7 @@ void Game::Initialize() {
     _resourceManager.LoadGameTexture("sand", "sand.png");
     _resourceManager.LoadGameTexture("lumberjack_house", "lmbrjck-house.png");
     _resourceManager.LoadGameTexture("miner_house", "miner-house.png");
+    _resourceManager.LoadGameTexture("farmer_house", "farmer-house.png");
     _resourceManager.LoadGameTexture("storage_category_button", "storage_category_button.png");
     _resourceManager.LoadGameTexture("house_category_button", "house_category_button.png");
     _resourceManager.LoadGameTexture("defence_category_button", "defence_category_button.png");
@@ -32,8 +34,12 @@ void Game::Initialize() {
     _resourceManager.LoadGameTexture("close_button", "close_button.png");
     _resourceManager.LoadGameTexture("barrack", "barrack.png");
     _resourceManager.LoadGameTexture("knight", "knight.png");
+    _resourceManager.LoadGameTexture("raider", "raider.png");
+    _resourceManager.LoadGameTexture("townhall", "townhall.png");
+    _resourceManager.LoadGameTexture("sleep", "sleep.png");
     _map.Generate();
     _player.SetTexture(_resourceManager.GetGameTexture("player"));
+    _townhall.SetTexture(_resourceManager.GetGameTexture("townhall"));
     _camera = {0};
     _camera.target = _player.GetPosition();
     _camera.offset = Vector2{(float)_screenWidth/2, (float)_screenHeight/2};
@@ -59,10 +65,19 @@ void Game::Update() {
     }
     UpdateCamera();
     _ui.Update();
+
+
     if (_buildingPlacingMode) {
         if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
             PlaceBuilding(GetMousePosition());
         }
+    }
+
+    if (IsKeyPressed(KEY_R) && !_isRaidActive) {
+        StartRaidEvent();
+    }
+    if (_isRaidActive) {
+        HandleRaid();
     }
 
     std::vector<Storage*> woodStorages;
@@ -76,17 +91,38 @@ void Game::Update() {
     for (auto& ws : _stoneStorages) {
         stoneStorages.push_back(&ws);
     }
+    std::vector<Storage*> farms;
+    for (auto& ws : _farms) {
+        farms.push_back(&ws);
+    }
+    std::vector<Storage*> barracks;
+    for (auto& ws : _barracks) {
+        barracks.push_back(&ws);
+    }
     for (auto& miner : _miners) {
         miner.Update(stoneStorages, _map);
     }
     for (auto& farmer: _farmers) {
         farmer.Update(_farms, _map);
     }
+
     for (auto& barrack: _barracks) {
-        barrack.Update(_resourceManager, _camera);
+        barrack.Update(_resourceManager, _camera, _raiders, _isRaidActive);
     }
-
-
+    if (_isRaidActive) {
+        std::vector<GameObject*> allTargets;
+        allTargets.insert(allTargets.end(), woodStorages.begin(), woodStorages.end());
+        allTargets.insert(allTargets.end(), stoneStorages.begin(), stoneStorages.end());
+        allTargets.insert(allTargets.end(), farms.begin(), farms.end());
+        allTargets.push_back(&_townhall);
+        allTargets.erase(
+                std::remove_if(allTargets.begin(), allTargets.end(), [](GameObject* obj) {return dynamic_cast<Storage*>(obj)->IsDestroyed();}),
+                allTargets.end()
+        );
+        for (auto& raider : _raiders) {
+            raider.Update(allTargets, _map);
+        }
+    }
 
     _woodCounter = CalculateTotalWood();
     _stoneCounter = CalculateTotalStone();
@@ -100,6 +136,7 @@ void Game::Draw() {
 
     BeginMode2D(_camera);
     _map.Draw(_resourceManager);
+    _townhall.Draw();
     for (const auto& house : _lumberjackHouses) {
         house.Draw();
     }
@@ -119,6 +156,9 @@ void Game::Draw() {
     for (const auto& farm : _farms) {
         farm.Draw();
     }
+    for (const auto& barrack : _barracks) {
+        barrack.Draw();
+    }
 
     for (const auto& worker : _lumberjacks) {
         worker.Draw();
@@ -129,15 +169,9 @@ void Game::Draw() {
     for (const auto& worker : _farmers) {
         worker.Draw();
     }
-    for (const auto& barrack : _barracks) {
-        barrack.Draw();
+    for (const auto& raider : _raiders) {
+        if (raider.IsAlive()) raider.Draw();
     }
-
-    for (const auto& tree : _trees) {
-        tree.Draw();
-    }
-    // Если мы в режиме размещения, рисуем контур дома
-
     _player.Draw();
     EndMode2D();
     if (_buildingPlacingMode) {
@@ -158,7 +192,7 @@ void Game::Draw() {
                 DrawTexturePro(_resourceManager.GetGameTexture("miner_house"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("miner_house").width, (float)_resourceManager.GetGameTexture("miner_house").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 100.0f, 100.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
                 break;
             case BuildingType::FarmerHouse:
-                DrawTexturePro(_resourceManager.GetGameTexture("miner_house"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("miner_house").width, (float)_resourceManager.GetGameTexture("miner_house").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 100.0f, 100.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
+                DrawTexturePro(_resourceManager.GetGameTexture("farmer_house"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("farmer_house").width, (float)_resourceManager.GetGameTexture("farmer_house").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 100.0f, 100.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
                 break;
             case BuildingType::Barrack:
                 DrawTexturePro(_resourceManager.GetGameTexture("barrack"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("barrack").width, (float)_resourceManager.GetGameTexture("barrack").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 150.0f, 150.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
@@ -168,6 +202,11 @@ void Game::Draw() {
     _ui.Draw();
     char buffer[50];
     snprintf(buffer, sizeof(buffer), "Wood: %d / %d\nStone: %d / %d\nFood: %d / %d", (int)_woodCounter.x, (int)_woodCounter.y, (int)_stoneCounter.x, (int)_stoneCounter.y, (int)_foodCounter.x, (int)_foodCounter.y);
+    if (_isRaidActive) {
+        char buffer2[20];
+        snprintf(buffer2, sizeof(buffer2), "Raiders: %d", (int)_raiders.size());
+        DrawText(buffer2, _screenWidth / 2 - 70, 20, 40, RED);
+    }
     DrawText(buffer, 20, 20, 20, WHITE);
     DrawFPS(20, 110);
 
@@ -207,7 +246,7 @@ void Game::PlaceBuilding(Vector2 position) {
             _miners.back().SetHomePosition(worldPos);
             break;
         case BuildingType::FarmerHouse:
-            _farmerHouses.push_back(FarmerHouse(worldPos, _resourceManager.GetGameTexture("miner_house")));
+            _farmerHouses.push_back(FarmerHouse(worldPos, _resourceManager.GetGameTexture("farmer_house")));
             _farmers.push_back(Farmer(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("farmer"), worldPos));
             _farmers.back().SetHomePosition(worldPos);
             break;
@@ -269,4 +308,48 @@ Vector2 Game::CalculateTotalFood() {
         foodCounter.y += farm.GetCapacity();
     }
     return foodCounter;
+}
+
+void Game::StartRaidEvent() {
+    _isRaidActive = true;
+    _raiders.push_back(Raider(Vector2{70.0f, 100.0f}, _resourceManager.GetGameTexture("raider")));
+    for (auto& barrack: _barracks) {
+        barrack.MobilizeKnights();
+    }
+}
+
+void Game::HandleRaid() {
+    if (IsKeyPressed(KEY_I)) {
+        _raiders.push_back(Raider(Vector2{70.0f, 100.0f}, _resourceManager.GetGameTexture("raider")));
+    }
+    // менять указатель у рыцарей если они указывают на мертвого рейдера
+//    for (auto& raider: _raiders) {
+//        if (!raider.IsAlive()) {
+//            std::cout << &raider - &_raiders[0] << " is dead\n";
+//        }
+//    }
+    _raiders.erase(std::remove_if(_raiders.begin(), _raiders.end(), [](const Raider& raider) {
+        return !raider.IsAlive();
+    }), _raiders.end());
+    _woodStorages.erase(std::remove_if(_woodStorages.begin(), _woodStorages.end(), [](const Storage& st) {
+        return st.IsDestroyed();
+    }), _woodStorages.end());
+    _stoneStorages.erase(std::remove_if(_stoneStorages.begin(), _stoneStorages.end(), [](const Storage& st) {
+        return st.IsDestroyed();
+    }), _stoneStorages.end());
+    _farms.erase(std::remove_if(_farms.begin(), _farms.end(), [](const Storage& st) {
+        return st.IsDestroyed();
+    }), _farms.end());
+    // можно еще проверять что рыцарь возле рейдера но тогда он будет атаковать не блтжа йшего
+    if (_raiders.empty()) {
+        EndRaidEvent();
+    }
+}
+
+void Game::EndRaidEvent() {
+    _isRaidActive = false;
+    std::cout << "EVENT ENDS!!!\n";
+    for (auto& barrack: _barracks) {
+        barrack.DemobilizeKnights();
+    }
 }

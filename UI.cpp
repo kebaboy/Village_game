@@ -23,7 +23,7 @@ void UI::Initialize(Vector2 screenSize, ResourceManager& resourceManager, Game* 
     _buildMenu.LinkPanel(&_defenceMenu);
     _houseMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 490, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("lumberjack_house"), BuildingType::LumberjackHouse, _game));
     _houseMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 390, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("miner_house"), BuildingType::MinerHouse, _game));
-    _houseMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 290, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("miner_house"), BuildingType::FarmerHouse, _game));
+    _houseMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 290, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("farmer_house"), BuildingType::FarmerHouse, _game));
     _storageMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 490, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("wood_storage"), BuildingType::WoodStorage, _game));
     _storageMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 390, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("stone_storage"), BuildingType::StoneStorage, _game));
     _storageMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 290, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("farm"), BuildingType::Farm, _game));

@@ -20,18 +20,9 @@ public:
     virtual void Update();
     virtual void Draw() const;
     void SetTexture(const Texture2D& texture);
+    void SetPosition(Vector2 position);
     const Vector2& GetPosition() const;
     const Vector2& GetSize() const;
-    void SetPosition(Vector2 position);
-};
-
-class MovingGameObject: public GameObject {
-protected:
-    float _speed = 1.0f;
-public:
-    MovingGameObject(const Vector2 pos, const Vector2 size, const Texture2D sprite);
-    void MoveForwardTarget(const Vector2 target);
-    bool IsAtTarget(const Vector2 target);
 };
 
 class Player: public GameObject {
@@ -90,14 +81,24 @@ class Storage: public GameObject {
 protected:
     int _resourceCount = 0;
     int _maxCapacity = 3;
+    float _durability = 5.0f;
+    bool _destroyed = false;
 public:
     Storage(const Vector2 pos, const Texture2D sprite);
+    Storage(const Vector2 pos);
 
     bool AddResource(int amount);
     int GetCurrentResourceCount() const;
     int GetCapacity() const;
+    void TakeDamage(int damage);
+    bool IsDestroyed() const;
 
     bool isFull() const;
+};
+
+class Townhall: public Storage {
+public:
+    Townhall(const Vector2 pos);
 };
 
 class WoodStorage: public Storage {
@@ -110,11 +111,11 @@ public:
 };
 class Farm: public Storage {
 private:
-    int _farmersCount = 0; // можно убрать
+    int _farmersCount = 0;
     int _maxFarmersCount = 2;
 public:
     Farm(const Vector2 pos, const Texture2D sprite);
-    int GetFarmersCount() const; // можно убрать
+    int GetFarmersCount() const;
     int GetMaxFarmersCount() const;
     bool AddFarmer();
     bool RemoveFarmer();
@@ -130,13 +131,26 @@ enum class TaskMode {
     DELIVERING,
     IDLE,
     PATROLLING,
+    TO_RAIDER,
+    ATTACK,
+};
+
+class MovingGameObject: public GameObject {
+protected:
+    float _speed = 1.0f;
+public:
+    MovingGameObject(const Vector2 pos, const Vector2 size, const Texture2D sprite);
+
+    virtual GameObject* FindClosestObject(const std::vector<GameObject*>& objects);
+    void MoveForwardTarget(const Vector2 target);
+    bool IsAtTarget(const Vector2 target);
 };
 
 class Worker: public MovingGameObject {
 protected:
     TaskMode _taskMode;
 
-    float _maxEnergy = 5;
+    float _maxEnergy = 4;
     float  _energy = _maxEnergy;
     float _resourceAmount = 1.0f;
 
@@ -149,11 +163,13 @@ protected:
 public:
     Worker(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition);
 
-    virtual Vector2 FindClosestStorage(const std::vector<Storage*>& storages);
+    Vector2 FindClosestObject(const std::vector<Storage*>& storages);
     bool AddResourceToStorage(std::vector<Storage*>& storages);
     void SetHomePosition(Vector2 pos);
 
     void DecreaseEnergy(int delta = 1);
+
+    void Draw() const override;
 };
 
 class Lumberjack : public Worker {
@@ -188,12 +204,29 @@ protected:
     TaskMode _taskMode;
     float _hp = 5.0f;
     float _damage = 1.0f;
+    float _attackRange = 10.0f;
+    float _attackCooldown = 0.0f;
+    float _attackCooldownDuration = 2.0f;
+    float _damageFlashTime = 0.0f;
+    float _maxDamageFlashTime = 0.5f;
     bool _alive = true;
 public:
     Warrior(const Vector2 pos, const Texture2D sprite);
     bool IsAlive() const;
     virtual void TakeDamage(int damage);
-    virtual void Attack(Warrior& target);
+    virtual void Attack(Warrior* target);
+    void SetTaskMode (TaskMode task);
+    TaskMode& GetTaskMode();
+    void Draw() const override;
+};
+
+class Raider: public Warrior {
+private:
+public:
+    Raider(const Vector2 pos, const Texture2D sprite);
+    void Attack(Storage* target);
+    void Update(std::vector<GameObject*> &targets, Map& map);
+
 };
 
 class Knight: public Warrior {
@@ -204,8 +237,8 @@ private:
 public:
     Knight(const Vector2 pos, const Texture2D sprite, const Vector2 barrackPosition);
     Vector2 GetRandomPatrolPoint();
-
-    void Update() override;
+    Raider* FindClosestRaider(std::vector<Raider>& raiders);
+    void Update(std::vector<Raider>& raiders);
 };
 
 class Barrack: public Storage {
@@ -213,16 +246,10 @@ private:
     std::vector<Knight> _knights;
 public:
     Barrack(const Vector2 pos, const Texture2D sprite);
-    void Update(ResourceManager& resourceManager, Camera2D& camera);
+    void Update(ResourceManager& resourceManager, Camera2D& camera, std::vector<Raider>& raiders, bool isRaidActive);
+    void MobilizeKnights();
+    void DemobilizeKnights();
     void Draw() const override;
-};
-
-class Tree: public GameObject {
-private:
-    int _resources;
-public:
-    Tree(const Vector2 pos, const Vector2 size, const Texture2D sprite);
-//    void DrawOpacity() const;
 };
 
 #endif //VILLAGE_GAMEOBJECT_H

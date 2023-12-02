@@ -21,7 +21,8 @@ private:
 
     Map _map;
     Player _player;
-    std::vector<Tree> _trees;
+
+    Townhall _townhall;
 
     std::vector<LumberjackHouse> _lumberjackHouses;
     std::vector<MinerHouse> _minerHouses;
@@ -35,9 +36,13 @@ private:
     std::vector<Lumberjack> _lumberjacks;
     std::vector<Miner> _miners;
     std::vector<Farmer> _farmers;
+    std::vector<Raider> _raiders;
+    std::vector<std::shared_ptr<Raider>> _raidersD;
 
     bool _buildingPlacingMode = false;
     BuildingType _previewBuildingType;
+
+    bool _isRaidActive = false;
 
     Vector2 _woodCounter;
     Vector2 _stoneCounter;
@@ -57,6 +62,10 @@ public:
     Vector2 CalculateTotalWood();
     Vector2 CalculateTotalStone();
     Vector2 CalculateTotalFood();
+
+    void StartRaidEvent();
+    void HandleRaid();
+    void EndRaidEvent();
 };
 
 

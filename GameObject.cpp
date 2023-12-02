@@ -35,6 +35,20 @@ void GameObject::SetPosition(Vector2 position) {
 
 MovingGameObject::MovingGameObject(const Vector2 pos, const Vector2 size, const Texture2D sprite): GameObject(pos, size, sprite) {}
 
+GameObject* MovingGameObject::FindClosestObject(const std::vector<GameObject *> &objects) {
+    GameObject* closestObject = nullptr;
+    float closestDistance = std::numeric_limits<float>::max();
+
+    for (const auto& object: objects) {
+        float distance = Vector2Distance(_position, object->GetPosition());
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestObject = object;
+        }
+    }
+    return closestObject;
+}
+
 void MovingGameObject::MoveForwardTarget(const Vector2 target) {
     Vector2 direction = {
             target.x - _position.x,
@@ -92,6 +106,7 @@ int FarmerHouse::GetCostStone() const {return 70;}
 
 
 Storage::Storage(const Vector2 pos, const Texture2D sprite): GameObject(pos, Vector2{150.0f, 150.0f}, sprite) {}
+Storage::Storage(const Vector2 pos): GameObject(pos, Vector2 {150.0f, 150.0f}) {}
 
 bool Storage::AddResource(int amount) {
 
@@ -114,6 +129,21 @@ int Storage::GetCapacity() const {
 bool Storage::isFull() const {
     return _resourceCount >= _maxCapacity;
 }
+
+bool Storage::IsDestroyed() const {
+    return _destroyed;
+}
+
+void Storage::TakeDamage(int damage) {
+    _durability -= damage;
+    if (_durability <= 0) {
+        _destroyed = true;
+        std::cout << "DESTROYED!\n";
+    }
+    std::cout << "dur: " << _durability << "\n";
+}
+
+Townhall::Townhall(const Vector2 pos): Storage(pos) {};
 
 WoodStorage::WoodStorage(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {}
 
@@ -142,17 +172,22 @@ Barrack::Barrack(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite
     _maxCapacity = 5;
 }
 
-void Barrack::Update(ResourceManager& resourceManager, Camera2D& camera) {
+void Barrack::Update(ResourceManager& resourceManager, Camera2D& camera, std::vector<Raider>& raiders, bool isRaidActive) {
     Vector2 pos = GetWorldToScreen2D(_position, camera);
     if (CheckCollisionPointRec(GetMousePosition(), Rectangle {pos.x, pos.y, _size.x, _size.y}) &&
             IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         if (AddResource(1)) {
-            _knights.push_back(Knight(Vector2{_position.x + _size.x / 2, _position.y + _size.y / 2}, resourceManager.GetGameTexture("knight"), Vector2{_position.x + _size.x / 2, _position.y + _size.y / 2}));
+            if (isRaidActive) {
+                _knights.push_back(Knight(Vector2{_position.x + _size.x / 2, _position.y + _size.y / 2}, resourceManager.GetGameTexture("knight"), Vector2{_position.x + _size.x / 2, _position.y + _size.y / 2}));
+                _knights.back().SetTaskMode(TaskMode::TO_RAIDER);
+            } else {
+                _knights.push_back(Knight(Vector2{_position.x + _size.x / 2, _position.y + _size.y / 2}, resourceManager.GetGameTexture("knight"), Vector2{_position.x + _size.x / 2, _position.y + _size.y / 2}));
+            }
         }
 
     }
     for (auto& knight: _knights) {
-        knight.Update();
+        knight.Update(raiders);
     }
 }
 
@@ -163,13 +198,28 @@ void Barrack::Draw() const {
     }
 }
 
-Tree::Tree(const Vector2 pos, const Vector2 size, const Texture2D sprite): GameObject(pos, size, sprite) {}
+void Barrack::MobilizeKnights() {
+    for (auto& knight: _knights) {
+        if (knight.GetTaskMode() == TaskMode::PATROLLING) {
+            knight.SetTaskMode(TaskMode::TO_RAIDER);
+        }
+    }
+}
 
-
+void Barrack::DemobilizeKnights() {
+    for (auto& knight: _knights) {
+        knight.SetTaskMode(TaskMode::PATROLLING);
+    }
+}
 
 Worker::Worker(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): MovingGameObject(pos, Vector2 {80.0f, 50.0f}, sprite), _homePosition(homePosition) {};
 
-Vector2 Worker::FindClosestStorage(const std::vector<Storage*> &storages) {
+void Worker::Draw() const {
+    if (_taskMode == TaskMode::RESTING) DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, RED);
+    else DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
+}
+
+Vector2 Worker::FindClosestObject(const std::vector<Storage*> &storages) {
     Vector2 closestPosition = { -1, -1 };
     float closestDistance = std::numeric_limits<float>::max();
 
@@ -244,7 +294,7 @@ void Lumberjack::Update(std::vector<Storage*>& woodStorages, Map& map) {
                     _energy = _maxEnergy;
                     _restingTime = 0.0f;
                 }
-                Vector2 closestStorage = FindClosestStorage(woodStorages);
+                Vector2 closestStorage = FindClosestObject(woodStorages);
                 if (!IsEqual(closestStorage, Vector2{-1, -1})) {
                     _taskMode = TaskMode::DELIVERING;
                 }
@@ -255,7 +305,7 @@ void Lumberjack::Update(std::vector<Storage*>& woodStorages, Map& map) {
                 _taskMode = TaskMode::IDLE;
                 break;
             }
-            Vector2 closestStorage = FindClosestStorage(woodStorages);
+            Vector2 closestStorage = FindClosestObject(woodStorages);
             if (IsEqual(closestStorage, Vector2{-1, -1})) {
                 _taskMode = TaskMode::IDLE;
                 break;
@@ -315,7 +365,7 @@ void Miner::Update(std::vector<Storage*>& stoneStorages, Map& map) {
                     _energy = _maxEnergy;
                     _restingTime = 0.0f;
                 }
-                Vector2 closestStorage = FindClosestStorage(stoneStorages);
+                Vector2 closestStorage = FindClosestObject(stoneStorages);
                 if (!IsEqual(closestStorage, Vector2{-1, -1})) {
                     _taskMode = TaskMode::DELIVERING;
                 }
@@ -326,7 +376,7 @@ void Miner::Update(std::vector<Storage*>& stoneStorages, Map& map) {
                 _taskMode = TaskMode::IDLE;
                 break;
             }
-            Vector2 closestStorage = FindClosestStorage(stoneStorages);
+            Vector2 closestStorage = FindClosestObject(stoneStorages);
             if (IsEqual(closestStorage, Vector2{-1, -1})) {
                 _taskMode = TaskMode::IDLE;
                 break;
@@ -387,6 +437,7 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
 //            std::cout << "go to farm\n";
             if (IsAtTarget(farms[_currentFarmInd].GetPosition())) {
                 _taskMode = TaskMode::COLLECTING;
+                _collectingTime = 0.0f;
                 farms[_currentFarmInd].AddFarmer();
 //                std::cout << "am here and added\n";
 //                std::cout << "farmPosition: " << farms[_currentFarmInd].GetPosition().x << " " << farms[_currentFarmInd].GetPosition().y << "\n";
@@ -403,7 +454,7 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
 //                std::cout << "POSITION: " << farm->GetPosition().x << " " << farm->GetPosition().y << " ";
 //            }
 //            std::cout << "\n";
-            if (farms[_currentFarmInd].isFull()) {
+            if (farms[_currentFarmInd].isFull() || farms[_currentFarmInd].IsDestroyed()) {
                 _collectingTarget = Vector2{-1, -1};
                 if (_currentFarmInd != -1) {
                     farms[_currentFarmInd].RemoveFarmer();
@@ -419,6 +470,7 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
                     _collectingTime += GetFrameTime();
                     if (_collectingTime >= _timeToCollect) {
                         if (farms[_currentFarmInd].AddResource(_resourceAmount)) {
+                            std::cout << "Destroyed? " << farms[_currentFarmInd].IsDestroyed() << "\n";
                             DecreaseEnergy();
                             if (_energy <= 0) {
                                 if (_currentFarmInd != -1) {
@@ -429,6 +481,13 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
                                 _taskMode = TaskMode::TO_HOME;
                             }
                             _collectingTarget = {(float)GetRandomValue(farms[_currentFarmInd].GetPosition().x, farms[_currentFarmInd].GetPosition().x + farms[_currentFarmInd].GetSize().x), (float)GetRandomValue(farms[_currentFarmInd].GetPosition().y, farms[_currentFarmInd].GetPosition().y + farms[_currentFarmInd].GetSize().y)};
+                        } else {
+                            if (_currentFarmInd != -1) {
+                                farms[_currentFarmInd].RemoveFarmer();
+                                _currentFarmInd = -1;
+                            }
+                            _collectingTarget = Vector2{-1, -1};
+                            _taskMode = TaskMode::TO_FARM;
                         }
                         _collectingTime = 0.0f;
                     }
@@ -467,24 +526,64 @@ void Warrior::TakeDamage(int damage) {
     if (_hp <= 0) {
         _alive = false;
     }
+    _damageFlashTime = _maxDamageFlashTime;
 }
 
-void Warrior::Attack(Warrior &target) {
-    target.TakeDamage(_damage);
+TaskMode &Warrior::GetTaskMode() {
+    return _taskMode;
+}
+
+void Warrior::Attack(Warrior* target) {
+    if (_attackCooldown <= 0.0f) {
+        target->TakeDamage(_damage);
+        _attackCooldown = _attackCooldownDuration;
+    }
+}
+
+void Warrior::SetTaskMode(TaskMode task) {
+    _taskMode = task;
+}
+
+void Warrior::Draw() const {
+    if (_damageFlashTime > 0.0f) {
+        Color tint = {255, 0, 0, 255};
+        DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, tint);
+    } else {
+        DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
+    }
 }
 
 Knight::Knight(const Vector2 pos, const Texture2D sprite, const Vector2 barrackPosition): Warrior(pos, sprite), _barrackPosition(barrackPosition) {_taskMode = TaskMode::PATROLLING; _patrolPoint = GetRandomPatrolPoint();}
 
 Vector2 Knight::GetRandomPatrolPoint() {
-    // Генерация случайного смещения относительно позиции казармы
     float offsetX = GetRandomValue(-100, 100);
     float offsetY = GetRandomValue(-100, 100);
-
-    // Возвращение новой точки патрулирования вокруг казармы
     return Vector2 {_barrackPosition.x + offsetX, _barrackPosition.y + offsetY};
 }
 
-void Knight::Update() {
+Raider* Knight::FindClosestRaider(std::vector<Raider> &raiders) {
+    Raider* closestRaider = nullptr;
+    float closestDistance = std::numeric_limits<float>::max();
+
+    for (size_t i = 0; i < raiders.size(); i++) {
+//        std::cout << "POSITION: " << farms[i].GetPosition().x << " " << farms[i].GetPosition().y << " ";
+        if (raiders[i].IsAlive()) {
+            float distance = Vector2Distance(_position, raiders[i].GetPosition());
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestRaider = &raiders[i];
+            }
+        }
+    }
+//    std::cout << "\n";
+    return closestRaider;
+
+}
+
+void Knight::Update(std::vector<Raider>& raiders) {
+    if (_attackCooldown > 0.0f) {
+        _attackCooldown -= GetFrameTime();
+    }
     switch (_taskMode) {
         case TaskMode::PATROLLING:
             if (IsAtTarget(_patrolPoint)) {
@@ -496,6 +595,55 @@ void Knight::Update() {
                 }
             } else {
                 MoveForwardTarget(_patrolPoint);
+            }
+            break;
+        case TaskMode::TO_RAIDER:
+            Raider* nearestRaider = FindClosestRaider(raiders);
+            if (nearestRaider) {
+                MoveForwardTarget(nearestRaider->GetPosition());
+                if (Vector2Distance(_position, nearestRaider->GetPosition()) <= _attackRange && nearestRaider->IsAlive()) {
+                    Attack(nearestRaider);
+//                    nearestRaider->SetTaskMode(TaskMode::ATTACK);
+                }
+            }
+            break;
+    }
+}
+
+Raider::Raider(const Vector2 pos, const Texture2D sprite): Warrior(pos, sprite) {_taskMode = TaskMode::DELIVERING; _size = Vector2{30.0f, 30.0f};}
+
+void Raider::Attack(Storage *target) {
+    if (_attackCooldown <= 0.0f) {
+        target->TakeDamage(_damage);
+        _attackCooldown = _attackCooldownDuration;
+    }
+}
+
+void Raider::Update(std::vector<GameObject*> &allTargets, Map &map) {
+    if (_attackCooldown > 0.0f) {
+        _attackCooldown -= GetFrameTime();
+    }
+    if (_damageFlashTime > 0.0f) {
+        _damageFlashTime -= GetFrameTime();
+    }
+    switch (_taskMode) {
+//        case TaskMode::ATTACK:
+//            Attack(_targetStorage);
+//            if (_targetStorage->IsDestroyed()) _taskMode = TaskMode::DELIVERING;
+//            break;
+        case TaskMode::DELIVERING:
+            Vector2 pos = _position;
+            auto closestTarget = std::min_element(std::begin(allTargets), std::end(allTargets),
+                                                                  [pos](const GameObject* a, const GameObject* b) {
+                                                                      return Vector2Distance(a->GetPosition(), pos) < Vector2Distance(b->GetPosition(), pos);
+                                                                  });
+            Storage* targetStorage = dynamic_cast<Storage*>(*closestTarget);
+//            std::cout << target->GetPosition().x << " " << target->GetPosition().y << "\n";
+            if (targetStorage) {
+                MoveForwardTarget(targetStorage->GetPosition());
+                if (IsAtTarget(targetStorage->GetPosition())) {
+                    Attack(targetStorage);
+                }
             }
             break;
     }
