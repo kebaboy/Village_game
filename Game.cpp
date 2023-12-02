@@ -6,10 +6,21 @@
 #include "iostream"
 
 Game::Game() : _screenWidth(1000), _screenHeight(650),
+                _currentState(GameState::MainMenu),
+                _menu(Menu(_screenWidth, _screenHeight)),
                 _map(40, 30, 100),
                 _player(Vector2{ (float)(500/2), (float)(500/2)}, Vector2{float(50), float(50)}),
-               _townhall(Vector2{700.0f, 700.0f})
+                _townhall(Vector2{700.0f, 700.0f})
                 {}
+
+void Game::Run() {
+    Initialize();
+    while (!WindowShouldClose()) {
+        Update();
+        Render();
+    }
+    CloseWindow();
+}
 
 void Game::Initialize() {
     InitWindow(_screenWidth, _screenHeight, "Village");
@@ -37,6 +48,8 @@ void Game::Initialize() {
     _resourceManager.LoadGameTexture("raider", "raider.png");
     _resourceManager.LoadGameTexture("townhall", "townhall.png");
     _resourceManager.LoadGameTexture("sleep", "sleep.png");
+    _resourceManager.LoadGameTexture("start", "start_btn.png");
+    _menu.Initialize(_resourceManager);
     _map.Generate();
     _player.SetTexture(_resourceManager.GetGameTexture("player"));
     _townhall.SetTexture(_resourceManager.GetGameTexture("townhall"));
@@ -50,6 +63,29 @@ void Game::Initialize() {
 }
 
 void Game::Update() {
+    HandleStates();
+}
+
+void Game::HandleStates() {
+    switch (_currentState) {
+        case GameState::MainMenu:
+            HandleMenu();
+            break;
+        case GameState::InGame:
+            HandleGame();
+            break;
+    }
+}
+
+void Game::HandleMenu() {
+    _menu.Update();
+    if (_menu.GetCurrentState() == MenuState::StartGame) {
+        _currentState = GameState::InGame;
+        _menu.Reset();
+    }
+}
+
+void Game::HandleGame() {
     float plVelocity = _player.GetVelocity();
     if (IsKeyDown(KEY_RIGHT)) {
         PlayerMove({plVelocity, 0});
@@ -127,6 +163,21 @@ void Game::Update() {
     _woodCounter = CalculateTotalWood();
     _stoneCounter = CalculateTotalStone();
     _foodCounter = CalculateTotalFood();
+
+    if (_townhall.IsDestroyed()) {
+        Reset();
+    }
+}
+
+void Game::Render() {
+    switch (_currentState) {
+        case GameState::MainMenu:
+            _menu.Draw();
+            break;
+        case GameState::InGame:
+            Draw();
+            break;
+    }
 }
 
 void Game::Draw() {
@@ -211,15 +262,6 @@ void Game::Draw() {
     DrawFPS(20, 110);
 
     EndDrawing();
-}
-
-void Game::Run() {
-    Initialize();
-    while (!WindowShouldClose()) {
-        Update();
-        Draw();
-    }
-    CloseWindow();
 }
 
 void Game::PlaceBuilding(Vector2 position) {
@@ -352,4 +394,12 @@ void Game::EndRaidEvent() {
     for (auto& barrack: _barracks) {
         barrack.DemobilizeKnights();
     }
+}
+
+void Game::Reset() {
+    _currentState = GameState::MainMenu;
+    _raiders.clear();
+    EndRaidEvent();
+    _townhall = Townhall(Vector2{700.0f, 700.0f});
+    _townhall.SetTexture(_resourceManager.GetGameTexture("townhall"));
 }

@@ -28,6 +28,7 @@ public:
     Vector2 GetPosition() const;
     Vector2 GetSize() const;
     Texture2D GetTexture() const;
+    void SetTexture(Texture2D& texture);
     void SetPosition(float x, float y);
 };
 
@@ -36,6 +37,7 @@ protected:
     std::function<void()> _onClickFunc;
 public:
     UIButton(float x, float y, float w, float h, bool visibility, Texture2D texture, std::function<void()> onClick);
+    UIButton(float x, float y, float w, float h, bool visibility, std::function<void()> onClick);
 
     void Update() override;
 

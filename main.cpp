@@ -178,6 +178,7 @@ int main() {
 //    UnloadTexture(grass);
 //    UnloadTexture(house);
 //    CloseWindow();
+    std::cout << "ok1\n";
     Game game;
     game.Run();
     return 0;

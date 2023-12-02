@@ -37,6 +37,10 @@ Vector2 UIElement::GetSize() const {
     return _size;
 }
 
+void UIElement::SetTexture(Texture2D &texture) {
+    _sprite = texture;
+}
+
 Texture2D UIElement::GetTexture() const {
     return _sprite;
 }
@@ -49,6 +53,8 @@ void UIElement::SetPosition(float x, float y) {
 
 
 UIButton::UIButton(float x, float y, float w, float h, bool visibility, Texture2D texture, std::function<void()> onClick): UIElement(x, y, w, h, visibility, texture), _onClickFunc(onClick) {}
+
+UIButton::UIButton(float x, float y, float w, float h, bool visibility, std::function<void()> onClick): UIElement(x, y, w, h, visibility), _onClickFunc(onClick) {}
 
 void UIButton::Update() {
     if (CheckCollisionPointRec(GetMousePosition(),Rectangle {_position.x, _position.y, _size.x, _size.y}) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {

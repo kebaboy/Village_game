@@ -10,12 +10,19 @@
 #include "memory"
 #include "BuildingType.h"
 #include "UI.h"
+#include "Menu.h"
 
 class Game {
 private:
     int _screenWidth;
     int _screenHeight;
     ResourceManager _resourceManager;
+    enum GameState {
+        MainMenu,
+        InGame,
+    };
+    GameState _currentState;
+    Menu _menu;
     UI _ui;
     Camera2D _camera;
 
@@ -50,7 +57,11 @@ public:
     Game();
     void Initialize();
     void Update();
+    void HandleGame();
+    void HandleMenu();
+    void HandleStates();
     void UpdateCamera();
+    void Render();
     void Draw();
     void Run();
     void PlayerMove(Vector2 direction);
@@ -65,6 +76,8 @@ public:
     void StartRaidEvent();
     void HandleRaid();
     void EndRaidEvent();
+
+    void Reset();
 };
 
 
