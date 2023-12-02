@@ -37,7 +37,6 @@ private:
     std::vector<Miner> _miners;
     std::vector<Farmer> _farmers;
     std::vector<Raider> _raiders;
-    std::vector<std::shared_ptr<Raider>> _raidersD;
 
     bool _buildingPlacingMode = false;
     BuildingType _previewBuildingType;

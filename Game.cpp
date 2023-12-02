@@ -8,7 +8,7 @@
 Game::Game() : _screenWidth(1000), _screenHeight(650),
                 _map(40, 30, 100),
                 _player(Vector2{ (float)(500/2), (float)(500/2)}, Vector2{float(50), float(50)}),
-               _townhall(Vector2{500.0f, 500.0f})
+               _townhall(Vector2{700.0f, 700.0f})
                 {}
 
 void Game::Initialize() {

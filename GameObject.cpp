@@ -400,100 +400,88 @@ void Miner::Update(std::vector<Storage*>& stoneStorages, Map& map) {
 
 Farmer::Farmer(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) {_taskMode = TaskMode::TO_FARM; _timeToCollect = 6.0f;}
 
-void Farmer::FindClosestFarm(std::vector<Farm>& farms) {
-    int closestFarmInd = -1;
+Farm* Farmer::FindClosestFarm(std::vector<Farm>& farms) {
+    Farm* closestFarm = nullptr;
     float closestDistance = std::numeric_limits<float>::max();
 
     for (size_t i = 0; i < farms.size(); i++) {
 //        std::cout << "POSITION: " << farms[i].GetPosition().x << " " << farms[i].GetPosition().y << " ";
-        if (!farms[i].isFull() && (farms[i].GetFarmersCount() < farms[i].GetMaxFarmersCount())) {
+        if (!farms[i].isFull() && (farms[i].GetFarmersCount() < farms[i].GetMaxFarmersCount()) && !farms[i].IsDestroyed()) {
             float distance = Vector2Distance(_position, farms[i].GetPosition());
             if (distance < closestDistance) {
                 closestDistance = distance;
-                closestFarmInd = i;
+                closestFarm = &farms[i];
             }
         }
     }
-//    std::cout << "\n";
-    _currentFarmInd = closestFarmInd;
+    return closestFarm;
+}
+
+Farm* Farmer::FindClosestTargetFarm(std::vector<Farm>& farms) {
+    Farm* closestFarm = nullptr;
+
+    for (size_t i = 0; i < farms.size(); i++) {
+//        std::cout << "POSITION: " << farms[i].GetPosition().x << " " << farms[i].GetPosition().y << " ";
+        if (!farms[i].isFull() && !farms[i].IsDestroyed() && IsEqual(farms[i].GetPosition(), _targetFarmPosition)) {
+                closestFarm = &farms[i];
+        }
+    }
+    return closestFarm;
 }
 
 void Farmer::Update(std::vector<Farm>& farms, Map& map) {
     switch (_taskMode) {
-        case TaskMode::TO_FARM:
-            if (farms.empty()) {
-//                std::cout << "yes\n";
-                _taskMode = TaskMode::IDLE;
-                break;
-            }
-            FindClosestFarm(farms);
-//            std::cout << _currentFarmInd << "\n";
-            if (_currentFarmInd == -1) {
-//                std::cout << "yes2\n";
-                _taskMode = TaskMode::IDLE;
-                break;
-            }
-            MoveForwardTarget(farms[_currentFarmInd].GetPosition());
-//            std::cout << "go to farm\n";
-            if (IsAtTarget(farms[_currentFarmInd].GetPosition())) {
-                _taskMode = TaskMode::COLLECTING;
-                _collectingTime = 0.0f;
-                farms[_currentFarmInd].AddFarmer();
-//                std::cout << "am here and added\n";
-//                std::cout << "farmPosition: " << farms[_currentFarmInd].GetPosition().x << " " << farms[_currentFarmInd].GetPosition().y << "\n";
-            }
-            break;
         case TaskMode::TO_HOME:
             MoveForwardTarget(_homePosition);
             if (IsAtTarget(_homePosition)) {
                 _taskMode = TaskMode::RESTING;
             }
             break;
-        case TaskMode::COLLECTING:
+        case TaskMode::COLLECTING: {
 //            for (auto& farm : farms) {
 //                std::cout << "POSITION: " << farm->GetPosition().x << " " << farm->GetPosition().y << " ";
 //            }
 //            std::cout << "\n";
-            if (farms[_currentFarmInd].isFull() || farms[_currentFarmInd].IsDestroyed()) {
-                _collectingTarget = Vector2{-1, -1};
-                if (_currentFarmInd != -1) {
-                    farms[_currentFarmInd].RemoveFarmer();
-                    _currentFarmInd = -1;
-                }
-                _taskMode = TaskMode::TO_FARM;
-            } else {
+            Farm *targetFarm = FindClosestTargetFarm(farms);
+            if (targetFarm) {
                 if (IsEqual(_collectingTarget, Vector2{-1, -1})) {
-                    _collectingTarget = {(float)GetRandomValue(farms[_currentFarmInd].GetPosition().x, farms[_currentFarmInd].GetPosition().x + farms[_currentFarmInd].GetSize().x), (float)GetRandomValue(farms[_currentFarmInd].GetPosition().y, farms[_currentFarmInd].GetPosition().y + farms[_currentFarmInd].GetSize().y)};;
+                    _collectingTarget = {(float) GetRandomValue(targetFarm->GetPosition().x,
+                                                                targetFarm->GetPosition().x + targetFarm->GetSize().x),
+                                         (float) GetRandomValue(targetFarm->GetPosition().y,
+                                                                targetFarm->GetPosition().y +
+                                                                targetFarm->GetSize().y)};;
                 }
                 MoveForwardTarget(_collectingTarget);
                 if (IsAtTarget(_collectingTarget)) {
                     _collectingTime += GetFrameTime();
                     if (_collectingTime >= _timeToCollect) {
-                        if (farms[_currentFarmInd].AddResource(_resourceAmount)) {
-                            std::cout << "Destroyed? " << farms[_currentFarmInd].IsDestroyed() << "\n";
+                        if (targetFarm->AddResource(_resourceAmount)) {
                             DecreaseEnergy();
                             if (_energy <= 0) {
-                                if (_currentFarmInd != -1) {
-                                    farms[_currentFarmInd].RemoveFarmer();
-                                    _currentFarmInd = -1;
-                                }
+                                targetFarm->RemoveFarmer();
                                 _collectingTarget = Vector2{-1, -1};
                                 _taskMode = TaskMode::TO_HOME;
                             }
-                            _collectingTarget = {(float)GetRandomValue(farms[_currentFarmInd].GetPosition().x, farms[_currentFarmInd].GetPosition().x + farms[_currentFarmInd].GetSize().x), (float)GetRandomValue(farms[_currentFarmInd].GetPosition().y, farms[_currentFarmInd].GetPosition().y + farms[_currentFarmInd].GetSize().y)};
-                        } else {
-                            if (_currentFarmInd != -1) {
-                                farms[_currentFarmInd].RemoveFarmer();
-                                _currentFarmInd = -1;
-                            }
-                            _collectingTarget = Vector2{-1, -1};
-                            _taskMode = TaskMode::TO_FARM;
+                            _collectingTarget = {(float) GetRandomValue(targetFarm->GetPosition().x,
+                                                                        targetFarm->GetPosition().x +
+                                                                        targetFarm->GetSize().x),
+                                                 (float) GetRandomValue(targetFarm->GetPosition().y,
+                                                                        targetFarm->GetPosition().y +
+                                                                        targetFarm->GetSize().y)};;
                         }
                         _collectingTime = 0.0f;
                     }
                 }
+            } else {
+                if (targetFarm) {
+                    targetFarm->RemoveFarmer();
+                }
+                _collectingTarget = Vector2{-1, -1};
+                _targetFarmPosition = Vector2{-1, -1};
+                _taskMode = TaskMode::TO_FARM;
             }
             break;
+        }
         case TaskMode::RESTING:
             _restingTime += GetFrameTime();
             if (_restingTime >= _timeToRest) {
@@ -511,6 +499,23 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
                 }
                 _taskMode = TaskMode::TO_FARM;
             } else MoveForwardTarget(_homePosition);
+            break;
+        case TaskMode::TO_FARM:
+            Farm* targetFarm = FindClosestFarm(farms);
+            if (targetFarm) {
+                MoveForwardTarget(targetFarm->GetPosition());
+//            std::cout << "go to farm\n";
+                if (IsAtTarget(targetFarm->GetPosition())) {
+                    _taskMode = TaskMode::COLLECTING;
+                    _collectingTime = 0.0f;
+                    _targetFarmPosition = targetFarm->GetPosition();
+                    targetFarm->AddFarmer();
+//                std::cout << "am here and added\n";
+//                std::cout << "farmPosition: " << farms[_currentFarmInd].GetPosition().x << " " << farms[_currentFarmInd].GetPosition().y << "\n";
+                }
+            } else {
+                _taskMode = TaskMode::IDLE;
+            }
             break;
     }
 }

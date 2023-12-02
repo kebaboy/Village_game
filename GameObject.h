@@ -80,7 +80,7 @@ public:
 class Storage: public GameObject {
 protected:
     int _resourceCount = 0;
-    int _maxCapacity = 3;
+    int _maxCapacity = 10;
     float _durability = 5.0f;
     bool _destroyed = false;
 public:
@@ -150,7 +150,7 @@ class Worker: public MovingGameObject {
 protected:
     TaskMode _taskMode;
 
-    float _maxEnergy = 4;
+    float _maxEnergy = 10;
     float  _energy = _maxEnergy;
     float _resourceAmount = 1.0f;
 
@@ -189,12 +189,13 @@ public:
 
 class Farmer: public Worker {
 private:
-    int _currentFarmInd = -1;
+    Vector2 _targetFarmPosition = {-1, -1};
     Vector2 _collectingTarget = {-1, -1};
 public:
     Farmer(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition);
 
-    void FindClosestFarm(std::vector<Farm>& farms);
+    Farm* FindClosestFarm(std::vector<Farm>& farms);
+    Farm* FindClosestTargetFarm(std::vector<Farm>& farms);
 
     void Update(std::vector<Farm>& farmStorages, Map& map);
 };
