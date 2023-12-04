@@ -26,6 +26,7 @@ public:
     UIElement* GetElement(size_t id);
     void Draw();
     void Update();
+    void Reset();
 };
 
 #endif //VILLAGE_UI_H

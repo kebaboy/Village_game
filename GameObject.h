@@ -111,12 +111,14 @@ public:
 };
 class Farm: public Storage {
 private:
+    int _workersAmount = 5;
     int _farmersCount = 0;
     int _maxFarmersCount = 2;
 public:
     Farm(const Vector2 pos, const Texture2D sprite);
     int GetFarmersCount() const;
     int GetMaxFarmersCount() const;
+    int GetWorkersAmount() const;
     bool AddFarmer();
     bool RemoveFarmer();
 };
@@ -150,7 +152,7 @@ class Worker: public MovingGameObject {
 protected:
     TaskMode _taskMode;
 
-    float _maxEnergy = 10;
+    float _maxEnergy = 1;
     float  _energy = _maxEnergy;
     float _resourceAmount = 1.0f;
 

@@ -47,3 +47,7 @@ void UI::Update() {
     _houseMenu.Update(mousePosition);
     _defenceMenu.Update(mousePosition);
 }
+
+void UI::Reset() {
+    _buildMenu.SetVisibility(false);
+}

@@ -6,7 +6,7 @@
 #include "iostream"
 
 Game::Game() : _screenWidth(1000), _screenHeight(650),
-                _currentState(GameState::MainMenu),
+                _currentState(GameState::InGame),
                 _menu(Menu(_screenWidth, _screenHeight)),
                 _map(40, 30, 100),
                 _player(Vector2{ (float)(500/2), (float)(500/2)}, Vector2{float(50), float(50)}),
@@ -259,7 +259,19 @@ void Game::Draw() {
         DrawText(buffer2, _screenWidth / 2 - 70, 20, 40, RED);
     }
     DrawText(buffer, 20, 20, 20, WHITE);
-    DrawFPS(20, 110);
+
+    DrawRectangle(20, 110, 150, 20, DARKGRAY);
+    int workers = CalculateTotalWorkersAmount();
+    int workersCount = _lumberjacks.size()+_miners.size()+_farmers.size();
+    if (workers && workersCount <= workers && !_flashRed) {
+        DrawRectangle(20, 110, 150, 20, YELLOW);
+        DrawRectangle(20, 110, static_cast<int>((150.0f / workers) * (workersCount)), 20, DARKGRAY);
+    } else if (_flashTimer < _flashDuration) {
+        DrawRectangle(20, 110, 150, 20, RED);
+        _flashTimer += GetFrameTime();
+    } else _flashRed = false;
+
+    DrawFPS(20, 140);
 
     EndDrawing();
 }
@@ -278,19 +290,34 @@ void Game::PlaceBuilding(Vector2 position) {
             _farms.push_back(Farm(worldPos, _resourceManager.GetGameTexture("farm")));
             break;
         case BuildingType::LumberjackHouse:
-            _lumberjackHouses.push_back(LumberjackHouse(worldPos, _resourceManager.GetGameTexture("lumberjack_house")));
-            _lumberjacks.push_back(Lumberjack(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("lumberjack"), worldPos));
-            _lumberjacks.back().SetHomePosition(worldPos);
+            if (_lumberjacks.size() + _miners.size() + _farmers.size() < CalculateTotalWorkersAmount()) {
+                _lumberjackHouses.push_back(LumberjackHouse(worldPos, _resourceManager.GetGameTexture("lumberjack_house")));
+                _lumberjacks.push_back(Lumberjack(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("lumberjack"), worldPos));
+                _lumberjacks.back().SetHomePosition(worldPos);
+            } else {
+                _flashRed = true;
+                _flashTimer = 0.0f;
+            }
             break;
         case BuildingType::MinerHouse:
-            _minerHouses.push_back(MinerHouse(worldPos, _resourceManager.GetGameTexture("miner_house")));
-            _miners.push_back(Miner(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("miner"), worldPos));
-            _miners.back().SetHomePosition(worldPos);
+            if (_lumberjacks.size() + _miners.size() + _farmers.size() < CalculateTotalWorkersAmount()) {
+                _minerHouses.push_back(MinerHouse(worldPos, _resourceManager.GetGameTexture("miner_house")));
+                _miners.push_back(Miner(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("miner"), worldPos));
+                _miners.back().SetHomePosition(worldPos);
+            } else {
+                _flashRed = true;
+                _flashTimer = 0.0f;
+            }
             break;
         case BuildingType::FarmerHouse:
-            _farmerHouses.push_back(FarmerHouse(worldPos, _resourceManager.GetGameTexture("farmer_house")));
-            _farmers.push_back(Farmer(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("farmer"), worldPos));
-            _farmers.back().SetHomePosition(worldPos);
+            if (_lumberjacks.size() + _miners.size() + _farmers.size() < CalculateTotalWorkersAmount()) {
+                _farmerHouses.push_back(FarmerHouse(worldPos, _resourceManager.GetGameTexture("farmer_house")));
+                _farmers.push_back(Farmer(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("farmer"), worldPos));
+                _farmers.back().SetHomePosition(worldPos);
+            } else {
+                _flashRed = true;
+                _flashTimer = 0.0f;
+            }
             break;
         case BuildingType::Barrack:
             _barracks.push_back(Barrack(worldPos, _resourceManager.GetGameTexture("barrack")));
@@ -398,8 +425,32 @@ void Game::EndRaidEvent() {
 
 void Game::Reset() {
     _currentState = GameState::MainMenu;
+    _isRaidActive = false;
     _raiders.clear();
-    EndRaidEvent();
+    _barracks.clear();
+    _lumberjacks.clear();
+    _miners.clear();
+    _farmers.clear();
+    _lumberjackHouses.clear();
+    _minerHouses.clear();
+    _farmerHouses.clear();
+    _woodStorages.clear();
+    _stoneStorages.clear();
+    _farms.clear();
+    _buildingPlacingMode = false;
+    _ui.Reset();
+
     _townhall = Townhall(Vector2{700.0f, 700.0f});
     _townhall.SetTexture(_resourceManager.GetGameTexture("townhall"));
+    _player.SetPosition(Vector2{ (float)(500/2), (float)(500/2)});
+    _player.SetTexture(_resourceManager.GetGameTexture("player"));
+
+}
+
+int Game::CalculateTotalWorkersAmount() {
+    int workers = std::accumulate(_farms.begin(), _farms.end(), 0,
+                              [](int partialSum, const Farm& obj) {
+                                  return partialSum + obj.GetWorkersAmount();
+                              });
+    return workers;
 }

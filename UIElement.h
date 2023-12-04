@@ -54,6 +54,7 @@ public:
     void Update(const Vector2& mousePosition);
     virtual void Draw();
     virtual void SetVisibility(bool value);
+    bool GetVisibility() const;
 };
 
 class BuildMenuButton : public UIButton {
@@ -88,6 +89,7 @@ public:
     void OpenCategory();
     UIPanel* GetCategory() const;
     void SetVisibility(bool value);
+    void Draw() override;
 };
 
 class BuildingButton: public UIButton {

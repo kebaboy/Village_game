@@ -159,6 +159,10 @@ int Farm::GetMaxFarmersCount() const {
     return _maxFarmersCount;
 }
 
+int Farm::GetWorkersAmount() const {
+    return _workersAmount;
+}
+
 bool Farm::AddFarmer() {
     _farmersCount++;
 }
@@ -215,7 +219,7 @@ void Barrack::DemobilizeKnights() {
 Worker::Worker(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): MovingGameObject(pos, Vector2 {80.0f, 50.0f}, sprite), _homePosition(homePosition) {};
 
 void Worker::Draw() const {
-    if (_taskMode == TaskMode::RESTING) DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, RED);
+    if (_taskMode == TaskMode::RESTING) DrawText("Zzz...", static_cast<int>(GetPosition().x + 20), static_cast<int>(GetPosition().y + 0), 30, WHITE);
     else DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
 }
 

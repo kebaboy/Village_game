@@ -101,6 +101,10 @@ void UIPanel::Draw() {
     }
 }
 
+bool UIPanel::GetVisibility() const {
+    return _visible;
+}
+
 UIElement* UIPanel::GetElement(size_t id) {
     //dynamic_cast<UIButton*>(element.get())
     return _elements[id].get();
@@ -157,6 +161,12 @@ UIPanel* BuildCategoryButton::GetCategory() const {
 void BuildCategoryButton::SetVisibility(bool value) {
     _visible = value;
     _categoryPanel->SetVisibility(value);
+}
+
+void BuildCategoryButton::Draw() {
+    if (!_visible) return;
+    if (_categoryPanel->GetVisibility()) DrawTexturePro(_sprite, Rectangle{0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x, _position.y, _size.x, _size.y}, Vector2{0, 0}, 0.0f, WHITE);
+    else DrawTexturePro(_sprite, Rectangle{0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x, _position.y, _size.x, _size.y}, Vector2{0, 0}, 0.0f, GRAY);
 }
 
 BuildingButton::BuildingButton(float x, float y, float w, float h, bool visibility, Texture2D texture, BuildingType type, Game* game): UIButton(x, y, w, h, visibility, texture, [this]() {this->Build();}), _buildingType(type), _game(game){}

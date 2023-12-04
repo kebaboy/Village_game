@@ -11,6 +11,7 @@
 #include "BuildingType.h"
 #include "UI.h"
 #include "Menu.h"
+#include "numeric"
 
 class Game {
 private:
@@ -53,6 +54,10 @@ private:
     Vector2 _woodCounter;
     Vector2 _stoneCounter;
     Vector2 _foodCounter;
+
+    bool _flashRed = false;
+    float _flashDuration = 0.5f;
+    float _flashTimer = 0.0f;
 public:
     Game();
     void Initialize();
@@ -72,6 +77,7 @@ public:
     Vector2 CalculateTotalWood();
     Vector2 CalculateTotalStone();
     Vector2 CalculateTotalFood();
+    int CalculateTotalWorkersAmount();
 
     void StartRaidEvent();
     void HandleRaid();
