@@ -10,7 +10,7 @@ Game::Game() : _screenWidth(1000), _screenHeight(650),
                 _menu(Menu(_screenWidth, _screenHeight)),
                 _map(40, 30, 100),
                 _player(Vector2{ (float)(500/2), (float)(500/2)}, Vector2{float(50), float(50)}),
-                _townhall(Vector2{700.0f, 700.0f})
+                _townhall(Vector2{1700.0f, 1700.0f})
                 {}
 
 void Game::Run() {
@@ -120,9 +120,6 @@ void Game::HandleGame() {
     for (auto& ws : _woodStorages) {
         woodStorages.push_back(&ws);
     }
-    for (auto& lumberjack : _lumberjacks) {
-        lumberjack.Update(woodStorages, _map);
-    }
     std::vector<Storage*> stoneStorages;
     for (auto& ws : _stoneStorages) {
         stoneStorages.push_back(&ws);
@@ -134,6 +131,46 @@ void Game::HandleGame() {
     std::vector<Storage*> barracks;
     for (auto& ws : _barracks) {
         barracks.push_back(&ws);
+    }
+
+    int extra = CalculateTotalWorkersAmount() - _lumberjacks.size() - _miners.size() - _farmers.size();
+    std::vector<Worker*> allWorkers;
+    for (auto& w: _lumberjacks) {
+        allWorkers.push_back(&w);
+    }
+    for (auto& w: _miners) {
+        allWorkers.push_back(&w);
+    }
+    for (auto& w: _farmers) {
+        allWorkers.push_back(&w);
+    }
+    if (extra < 0) {
+//        std::vector<int> ind;
+//        extra *= -1;
+//        while (ind.size() != extra) {
+//            int index = GetRandomValue(0, allWorkers.size() - 1);
+//            if ((std::find(ind.begin(), ind.end(), index)) == ind.end()) {
+//                ind.push_back(index);
+//            }
+//        }
+        extra = (extra > 0) ? extra : -extra;
+        for (size_t i = 0; i < extra; i++) {
+            allWorkers[allWorkers.size() - 1 - i]->Hunger(true);
+        }
+//        for (int index: ind) {
+//            allWorkers[index]->Hunger(true);
+//        }
+
+    } else {
+        for (auto worker: allWorkers) {
+            worker->Hunger(false);
+        }
+    }
+//    allWorkers.insert(allWorkers.end(), _lumberjacks.begin(), _lumberjacks.end());
+//    allWorkers.insert(allWorkers.end(), _miners.begin(), _miners.end());
+//    allWorkers.insert(allWorkers.end(), _farmers.begin(), _farmers.end());
+    for (auto& lumberjack : _lumberjacks) {
+        lumberjack.Update(woodStorages, _map);
     }
     for (auto& miner : _miners) {
         miner.Update(stoneStorages, _map);

@@ -219,8 +219,14 @@ void Barrack::DemobilizeKnights() {
 Worker::Worker(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): MovingGameObject(pos, Vector2 {80.0f, 50.0f}, sprite), _homePosition(homePosition) {};
 
 void Worker::Draw() const {
-    if (_taskMode == TaskMode::RESTING) DrawText("Zzz...", static_cast<int>(GetPosition().x + 20), static_cast<int>(GetPosition().y + 0), 30, WHITE);
-    else DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
+    if (_taskMode == TaskMode::RESTING)
+        DrawText("Zzz...", static_cast<int>(GetPosition().x + 20), static_cast<int>(GetPosition().y), 30, WHITE);
+    else {
+        DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
+        if (_hungry) {
+            DrawText("hungry(", static_cast<int>(GetPosition().x), static_cast<int>(GetPosition().y - 20), 20, WHITE);
+        }
+    }
 }
 
 Vector2 Worker::FindClosestObject(const std::vector<Storage*> &storages) {
@@ -259,10 +265,15 @@ void Worker::SetHomePosition(Vector2 pos) {
     _homePosition = pos;
 }
 
+void Worker::Hunger(bool value) {
+    _hungry = value;
+}
+
 
 Lumberjack::Lumberjack(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) {_taskMode = TaskMode::TO_TREE;};
 
 void Lumberjack::Update(std::vector<Storage*>& woodStorages, Map& map) {
+    if (_hungry) _taskMode = TaskMode::IDLE;
     switch (_taskMode) {
         case TaskMode::TO_TREE: {
             Vector2 targetTreePosition = map.FindClosestTreePosition(_position);
@@ -293,14 +304,16 @@ void Lumberjack::Update(std::vector<Storage*>& woodStorages, Map& map) {
             break;
         case TaskMode::IDLE:
             if (IsAtTarget(_homePosition)) {
-                if (_energy != _maxEnergy) _restingTime += GetFrameTime();
-                if (_restingTime >= _timeToRest) {
-                    _energy = _maxEnergy;
-                    _restingTime = 0.0f;
-                }
-                Vector2 closestStorage = FindClosestObject(woodStorages);
-                if (!IsEqual(closestStorage, Vector2{-1, -1})) {
-                    _taskMode = TaskMode::DELIVERING;
+                if (!_hungry) {
+//                    if (_energy != _maxEnergy) _restingTime += GetFrameTime();
+//                    if (_restingTime >= _timeToRest) {
+//                        _energy = _maxEnergy;
+//                        _restingTime = 0.0f;
+//                    }
+                    Vector2 closestStorage = FindClosestObject(woodStorages);
+                    if (!IsEqual(closestStorage, Vector2{-1, -1})) {
+                        _taskMode = TaskMode::DELIVERING;
+                    }
                 }
             } else MoveForwardTarget(_homePosition);
             break;
@@ -334,6 +347,7 @@ void Lumberjack::Update(std::vector<Storage*>& woodStorages, Map& map) {
 Miner::Miner(const Vector2 pos, const Texture2D sprite, const Vector2 homePosition): Worker(pos, sprite, homePosition) {_taskMode = TaskMode::TO_STONE;};
 
 void Miner::Update(std::vector<Storage*>& stoneStorages, Map& map) {
+    if (_hungry) _taskMode = TaskMode::IDLE;
     switch (_taskMode) {
         case TaskMode::TO_STONE: {
             Vector2 targetStonePosition = map.FindClosestStonePosition(_position);
@@ -364,14 +378,11 @@ void Miner::Update(std::vector<Storage*>& stoneStorages, Map& map) {
             break;
         case TaskMode::IDLE:
             if (IsAtTarget(_homePosition)) {
-                if (_energy != _maxEnergy) _restingTime += GetFrameTime();
-                if (_restingTime >= _timeToRest) {
-                    _energy = _maxEnergy;
-                    _restingTime = 0.0f;
-                }
-                Vector2 closestStorage = FindClosestObject(stoneStorages);
-                if (!IsEqual(closestStorage, Vector2{-1, -1})) {
-                    _taskMode = TaskMode::DELIVERING;
+                if (!_hungry) {
+                    Vector2 closestStorage = FindClosestObject(stoneStorages);
+                    if (!IsEqual(closestStorage, Vector2{-1, -1})) {
+                        _taskMode = TaskMode::DELIVERING;
+                    }
                 }
             } else MoveForwardTarget(_homePosition);
             break;
@@ -434,6 +445,10 @@ Farm* Farmer::FindClosestTargetFarm(std::vector<Farm>& farms) {
 }
 
 void Farmer::Update(std::vector<Farm>& farms, Map& map) {
+    if (_hungry && _taskMode != TaskMode::COLLECTING) {
+        _taskMode = TaskMode::IDLE;
+    }
+
     switch (_taskMode) {
         case TaskMode::TO_HOME:
             MoveForwardTarget(_homePosition);
@@ -448,6 +463,13 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
 //            std::cout << "\n";
             Farm *targetFarm = FindClosestTargetFarm(farms);
             if (targetFarm) {
+                if (_hungry) {
+                    targetFarm->RemoveFarmer();
+                    _collectingTarget = Vector2{-1, -1};
+                    _targetFarmPosition = Vector2{-1, -1};
+                    _taskMode = TaskMode::IDLE;
+                    break;
+                }
                 if (IsEqual(_collectingTarget, Vector2{-1, -1})) {
                     _collectingTarget = {(float) GetRandomValue(targetFarm->GetPosition().x,
                                                                 targetFarm->GetPosition().x + targetFarm->GetSize().x),
@@ -496,12 +518,9 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
             break;
         case TaskMode::IDLE:
             if (IsAtTarget(_homePosition)) {
-                if (_energy != _maxEnergy) _restingTime += GetFrameTime();
-                if (_restingTime >= _timeToRest) {
-                    _energy = _maxEnergy;
-                    _restingTime = 0.0f;
+                if (!_hungry) {
+                    _taskMode = TaskMode::TO_FARM;
                 }
-                _taskMode = TaskMode::TO_FARM;
             } else MoveForwardTarget(_homePosition);
             break;
         case TaskMode::TO_FARM:

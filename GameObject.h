@@ -152,7 +152,7 @@ class Worker: public MovingGameObject {
 protected:
     TaskMode _taskMode;
 
-    float _maxEnergy = 1;
+    float _maxEnergy = 5;
     float  _energy = _maxEnergy;
     float _resourceAmount = 1.0f;
 
@@ -160,6 +160,8 @@ protected:
     float _timeToRest = 5.0f;
     float _collectingTime = 0.0f;
     float _timeToCollect = 3.0f;
+
+    bool _hungry = false;
 
     Vector2 _homePosition;
 public:
@@ -172,6 +174,8 @@ public:
     void DecreaseEnergy(int delta = 1);
 
     void Draw() const override;
+
+    void Hunger(bool value);
 };
 
 class Lumberjack : public Worker {
