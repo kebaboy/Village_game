@@ -60,6 +60,9 @@ private:
     bool _flashRed = false;
     float _flashDuration = 0.5f;
     float _flashTimer = 0.0f;
+
+    float _elapsedRaidTime = 0.0f;
+    const float _raidEventInterval = 180.0f;
 public:
     Game();
     void Initialize();
@@ -82,9 +85,10 @@ public:
     Vector2 CalculateTotalStone();
     Vector2 CalculateTotalFood();
     int CalculateTotalWorkersAmount();
+    int CalculateTotalKnights();
     void DecreaseAvailableResources(Requirements req);
 
-    void StartRaidEvent();
+    void StartRaidEvent(int knightsCount);
     void HandleRaid();
     void EndRaidEvent();
 

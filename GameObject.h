@@ -69,7 +69,7 @@ public:
 class Storage: public Building {
 protected:
     int _resourceCount = 0;
-    int _maxCapacity = 20;
+    int _maxCapacity = 100;
     float _durability = 5.0f;
     bool _destroyed = false;
 public:
@@ -200,7 +200,7 @@ protected:
     TaskMode _taskMode;
     float _hp = 5.0f;
     float _damage = 1.0f;
-    float _attackRange = 10.0f;
+    float _attackRange = 33.0f;
     float _attackCooldown = 0.0f;
     float _attackCooldownDuration = 2.0f;
     float _damageFlashTime = 0.0f;

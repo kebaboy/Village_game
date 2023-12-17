@@ -115,10 +115,15 @@ void Game::HandleGame() {
             PlaceBuilding(GetMousePosition());
         }
     }
-
-    if (IsKeyPressed(KEY_R) && !_isRaidActive) {
-        StartRaidEvent();
+    if (_elapsedRaidTime < _raidEventInterval) {
+        _elapsedRaidTime += GetFrameTime();
+    } else if (!_isRaidActive) {
+        int knightsCount = CalculateTotalKnights();
+        if (knightsCount >= 3) {
+            StartRaidEvent(knightsCount - 2);
+        }
     }
+
     if (_isRaidActive) {
         HandleRaid();
     }
@@ -458,18 +463,39 @@ Vector2 Game::CalculateTotalFood() {
     return foodCounter;
 }
 
-void Game::StartRaidEvent() {
+void Game::StartRaidEvent(int knightsCount) {
     _isRaidActive = true;
-    _raiders.push_back(Raider(Vector2{70.0f, 100.0f}, _resourceManager.GetGameTexture("raider")));
+    Vector2 mapSize = _map.GetMapSize();
+    for (int i = 0; i < knightsCount; i++) {
+        int randomSide = GetRandomValue(0, 3);
+        float randomX, randomY;
+        switch (randomSide) {
+            case 0:  // Left side
+                randomX = static_cast<float>(GetRandomValue(-80, -50));
+                randomY = static_cast<float>(GetRandomValue(0, mapSize.y));
+                break;
+            case 1:  // Right side
+                randomX = static_cast<float>(GetRandomValue(mapSize.x, mapSize.x + 30));
+                randomY = static_cast<float>(GetRandomValue(0, mapSize.y));
+                break;
+            case 2:  // Top side
+                randomX = static_cast<float>(GetRandomValue(0, mapSize.x));
+                randomY = static_cast<float>(GetRandomValue(-80, -50));
+                break;
+            case 3:  // Bottom side
+                randomX = static_cast<float>(GetRandomValue(0, mapSize.x));
+                randomY = static_cast<float>(GetRandomValue(mapSize.y, mapSize.y + 30));
+                break;
+        }
+        std::cout << randomX << randomY << std::endl;
+        _raiders.push_back(Raider(Vector2{randomX, randomY}, _resourceManager.GetGameTexture("raider")));
+    }
     for (auto& barrack: _barracks) {
         barrack.MobilizeKnights();
     }
 }
 
 void Game::HandleRaid() {
-    if (IsKeyPressed(KEY_I)) {
-        _raiders.push_back(Raider(Vector2{70.0f, 100.0f}, _resourceManager.GetGameTexture("raider")));
-    }
     // менять указатель у рыцарей если они указывают на мертвого рейдера
 //    for (auto& raider: _raiders) {
 //        if (!raider.IsAlive()) {
@@ -500,6 +526,7 @@ void Game::EndRaidEvent() {
     for (auto& barrack: _barracks) {
         barrack.DemobilizeKnights();
     }
+    _elapsedRaidTime = 0.0f;
 }
 
 void Game::Reset() {
@@ -519,6 +546,7 @@ void Game::Reset() {
     _buildingPlacingMode = false;
     _ui.Reset();
 
+    _elapsedRaidTime = 0.0f;
     _townhall = Townhall(Vector2{670.0f, 670.0f});
     _townhall.SetTexture(_resourceManager.GetGameTexture("townhall"));
     _player.SetPosition(Vector2{ (float)(500/2), (float)(500/2)});
@@ -537,6 +565,14 @@ int Game::CalculateTotalWorkersAmount() {
                                   return partialSum + obj.GetWorkersAmount();
                               });
     return workers;
+}
+
+int Game::CalculateTotalKnights() {
+    int n = 0;
+    for (const auto& barrack: _barracks) {
+        n += barrack.GetCurrentResourceCount();
+    }
+    return n;
 }
 
 void Game::DecreaseAvailableResources(Requirements req) {
