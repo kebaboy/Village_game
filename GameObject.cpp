@@ -73,40 +73,43 @@ bool MovingGameObject::IsAtTarget(const Vector2 target) {
 Player::Player(const Vector2 pos, const Vector2 size) : GameObject(pos, size) {}
 
 void Player::Draw() const {
-    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width/4, (float)_sprite.height/4}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
+    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width/4, (float)_sprite.height/4 - 7}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
 }
 
 const float Player::GetVelocity() const {
     return _playerVelocity;
 }
 
-WorkerHouse::WorkerHouse(const Vector2 pos, const Texture2D sprite): GameObject(pos, Vector2{100, 100}, sprite) {}
+Building::Building(const Vector2 pos, const Vector2 size, const Texture2D sprite): GameObject(pos, size, sprite) {}
+
+Building::Building(const Vector2 pos, const Vector2 size): GameObject(pos, size) {}
+
+bool Building::CanBuild(const Resources &availableResources) {
+    return availableResources._wood.x >= _requirements._wood &&
+           availableResources._stone.x >= _requirements._stone &&
+           availableResources._food.x >= _requirements._food;
+}
+
+const Requirements &Building::GetRequirements() const {
+    return _requirements;
+}
+
+
+WorkerHouse::WorkerHouse(const Vector2 pos, const Texture2D sprite): Building(pos, Vector2 {100.0f, 100.0f}, sprite) {}
 
 //void House::DrawOpacity() const {
 //    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{GetMousePosition().x, GetMousePosition().y, _size.x, _size.y}, Vector2{0,0}, 0.0f, Fade(WHITE, 0.5f));
 //}
 
-LumberjackHouse::LumberjackHouse(const Vector2 pos, const Texture2D sprite): WorkerHouse(pos, sprite) {}
+LumberjackHouse::LumberjackHouse(const Vector2 pos, const Texture2D sprite): WorkerHouse(pos, sprite) {_requirements = Requirements(5, 3, 3);}
 
-int LumberjackHouse::GetCostFood() const {return 10;}
-int LumberjackHouse::GetCostWood() const {return 70;}
-int LumberjackHouse::GetCostStone() const {return 50;}
+MinerHouse::MinerHouse(const Vector2 pos, const Texture2D sprite): WorkerHouse(pos, sprite) {_requirements = Requirements(3, 5, 3);}
 
-MinerHouse::MinerHouse(const Vector2 pos, const Texture2D sprite): WorkerHouse(pos, sprite) {}
-
-int MinerHouse::GetCostFood() const {return 10;}
-int MinerHouse::GetCostWood() const {return 50;}
-int MinerHouse::GetCostStone() const {return 70;}
-
-FarmerHouse::FarmerHouse(const Vector2 pos, const Texture2D sprite): WorkerHouse(pos, sprite) {}
-
-int FarmerHouse::GetCostFood() const {return 10;}
-int FarmerHouse::GetCostWood() const {return 50;}
-int FarmerHouse::GetCostStone() const {return 70;}
+FarmerHouse::FarmerHouse(const Vector2 pos, const Texture2D sprite): WorkerHouse(pos, sprite) {_requirements = Requirements(5, 5, 3);}
 
 
-Storage::Storage(const Vector2 pos, const Texture2D sprite): GameObject(pos, Vector2{150.0f, 150.0f}, sprite) {}
-Storage::Storage(const Vector2 pos): GameObject(pos, Vector2 {150.0f, 150.0f}) {}
+Storage::Storage(const Vector2 pos, const Texture2D sprite): Building(pos, Vector2 {150.0f, 150.0f}, sprite) {}
+Storage::Storage(const Vector2 pos): Building(pos, Vector2 {150.0f, 150.0f}) {}
 
 bool Storage::AddResource(int amount) {
 
@@ -145,11 +148,11 @@ void Storage::TakeDamage(int damage) {
 
 Townhall::Townhall(const Vector2 pos): Storage(pos) {};
 
-WoodStorage::WoodStorage(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {}
+WoodStorage::WoodStorage(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {_requirements = Requirements(15, 10, 0);}
 
-StoneStorage::StoneStorage(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {}
+StoneStorage::StoneStorage(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {_requirements = Requirements(10, 15, 0);}
 
-Farm::Farm(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {}
+Farm::Farm(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {_requirements = Requirements(7, 7, 15);}
 
 int Farm::GetFarmersCount() const {
     return _farmersCount;
@@ -172,15 +175,41 @@ bool Farm::RemoveFarmer() {
 }
 
 Barrack::Barrack(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {
+    _requirements = Requirements(12, 12, 5);
     _resourceCount = 0;
     _maxCapacity = 5;
 }
 
-void Barrack::Update(ResourceManager& resourceManager, Camera2D& camera, std::vector<Raider>& raiders, bool isRaidActive) {
+bool Barrack::AddResource(int amount, std::vector<Farm>& farms, const Resources& res) {
+    if (_resourceCount + amount <= _maxCapacity && res._food.x >= _knightCost) {
+        int value = _knightCost;
+        for (auto& farm: farms) {
+            int count = farm.GetCurrentResourceCount();
+            if (count != 0) {
+                if (count >= value) {
+                    farm.AddResource(value * -1);
+                    value = 0;
+                    break;
+                }
+                else {
+                    value -= count;
+                    farm.AddResource(count * -1);
+                }
+            }
+        }
+        if (value == 0) {
+            _resourceCount += amount;
+            return true;
+        }
+    }
+    return false;
+}
+
+void Barrack::Update(ResourceManager& resourceManager, Camera2D& camera, std::vector<Raider>& raiders, bool isRaidActive, std::vector<Farm>& farms, const Resources& res) {
     Vector2 pos = GetWorldToScreen2D(_position, camera);
     if (CheckCollisionPointRec(GetMousePosition(), Rectangle {pos.x, pos.y, _size.x, _size.y}) &&
             IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        if (AddResource(1)) {
+        if (AddResource(1, farms, res)) {
             if (isRaidActive) {
                 _knights.push_back(Knight(Vector2{_position.x + _size.x / 2, _position.y + _size.y / 2}, resourceManager.GetGameTexture("knight"), Vector2{_position.x + _size.x / 2, _position.y + _size.y / 2}));
                 _knights.back().SetTaskMode(TaskMode::TO_RAIDER);
@@ -421,6 +450,8 @@ Farm* Farmer::FindClosestFarm(std::vector<Farm>& farms) {
 
     for (size_t i = 0; i < farms.size(); i++) {
 //        std::cout << "POSITION: " << farms[i].GetPosition().x << " " << farms[i].GetPosition().y << " ";
+//        std::cout << farms[i].GetCurrentResourceCount() << std::endl;
+        std::cout << farms[i].GetFarmersCount() << std::endl;
         if (!farms[i].isFull() && (farms[i].GetFarmersCount() < farms[i].GetMaxFarmersCount()) && !farms[i].IsDestroyed()) {
             float distance = Vector2Distance(_position, farms[i].GetPosition());
             if (distance < closestDistance) {
@@ -437,13 +468,14 @@ Farm* Farmer::FindClosestTargetFarm(std::vector<Farm>& farms) {
 
     for (size_t i = 0; i < farms.size(); i++) {
 //        std::cout << "POSITION: " << farms[i].GetPosition().x << " " << farms[i].GetPosition().y << " ";
-        if (!farms[i].isFull() && !farms[i].IsDestroyed() && IsEqual(farms[i].GetPosition(), _targetFarmPosition)) {
+        if (!farms[i].IsDestroyed() && IsEqual(farms[i].GetPosition(), _targetFarmPosition)) {
                 closestFarm = &farms[i];
         }
     }
     return closestFarm;
 }
 
+// Кароч не удаляются фермеры из фермы когда она заполнена тк ближайшая ферма перестает искаться изза условия заполненностим
 void Farmer::Update(std::vector<Farm>& farms, Map& map) {
     if (_hungry && _taskMode != TaskMode::COLLECTING) {
         _taskMode = TaskMode::IDLE;
@@ -462,11 +494,10 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
 //            }
 //            std::cout << "\n";
             Farm *targetFarm = FindClosestTargetFarm(farms);
-            if (targetFarm) {
+            if (targetFarm && !targetFarm->isFull()) {
                 if (_hungry) {
                     targetFarm->RemoveFarmer();
                     _collectingTarget = Vector2{-1, -1};
-                    _targetFarmPosition = Vector2{-1, -1};
                     _taskMode = TaskMode::IDLE;
                     break;
                 }
@@ -475,7 +506,7 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
                                                                 targetFarm->GetPosition().x + targetFarm->GetSize().x),
                                          (float) GetRandomValue(targetFarm->GetPosition().y,
                                                                 targetFarm->GetPosition().y +
-                                                                targetFarm->GetSize().y)};;
+                                                                targetFarm->GetSize().y)};
                 }
                 MoveForwardTarget(_collectingTarget);
                 if (IsAtTarget(_collectingTarget)) {
@@ -494,6 +525,10 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
                                                  (float) GetRandomValue(targetFarm->GetPosition().y,
                                                                         targetFarm->GetPosition().y +
                                                                         targetFarm->GetSize().y)};;
+                        } else {
+                            targetFarm->RemoveFarmer();
+                            _collectingTarget = Vector2{-1, -1};
+                            _taskMode = TaskMode::TO_FARM;
                         }
                         _collectingTime = 0.0f;
                     }
@@ -509,6 +544,7 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
             break;
         }
         case TaskMode::RESTING:
+            std::cout << "resting\n";
             _restingTime += GetFrameTime();
             if (_restingTime >= _timeToRest) {
                 _taskMode = TaskMode::TO_FARM;
@@ -517,6 +553,7 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
                 }
             break;
         case TaskMode::IDLE:
+            std::cout << "idle\n";
             if (IsAtTarget(_homePosition)) {
                 if (!_hungry) {
                     _taskMode = TaskMode::TO_FARM;
@@ -527,7 +564,7 @@ void Farmer::Update(std::vector<Farm>& farms, Map& map) {
             Farm* targetFarm = FindClosestFarm(farms);
             if (targetFarm) {
                 MoveForwardTarget(targetFarm->GetPosition());
-//            std::cout << "go to farm\n";
+                std::cout << "go to farm\n";
                 if (IsAtTarget(targetFarm->GetPosition())) {
                     _taskMode = TaskMode::COLLECTING;
                     _collectingTime = 0.0f;

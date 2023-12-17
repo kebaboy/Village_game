@@ -10,7 +10,8 @@ Game::Game() : _screenWidth(1000), _screenHeight(650),
                 _menu(Menu(_screenWidth, _screenHeight)),
                 _map(40, 30, 100),
                 _player(Vector2{ (float)(500/2), (float)(500/2)}, Vector2{float(50), float(50)}),
-                _townhall(Vector2{1700.0f, 1700.0f})
+                _townhall(Vector2{670.0f, 670.0f}),
+                _availableResources(Vector2{0, 0}, Vector2{0, 0}, Vector2{0, 0})
                 {}
 
 void Game::Run() {
@@ -53,6 +54,12 @@ void Game::Initialize() {
     _map.Generate();
     _player.SetTexture(_resourceManager.GetGameTexture("player"));
     _townhall.SetTexture(_resourceManager.GetGameTexture("townhall"));
+    _woodStorages.push_back(WoodStorage(Vector2{500.0f, 500.0f}, _resourceManager.GetGameTexture("wood_storage")));
+    _woodStorages.back().AddResource(_woodStorages.back().GetCapacity());
+    _stoneStorages.push_back(StoneStorage(Vector2{500.0f, 670.0f}, _resourceManager.GetGameTexture("stone_storage")));
+    _stoneStorages.back().AddResource(_stoneStorages.back().GetCapacity());
+    _farms.push_back(Farm(Vector2{670.0f, 500.0f}, _resourceManager.GetGameTexture("farm")));
+    _farms.back().AddResource(_farms.back().GetCapacity());
     _camera = {0};
     _camera.target = _player.GetPosition();
     _camera.offset = Vector2{(float)_screenWidth/2, (float)_screenHeight/2};
@@ -180,7 +187,7 @@ void Game::HandleGame() {
     }
 
     for (auto& barrack: _barracks) {
-        barrack.Update(_resourceManager, _camera, _raiders, _isRaidActive);
+        barrack.Update(_resourceManager, _camera, _raiders, _isRaidActive, _farms, _availableResources);
     }
     if (_isRaidActive) {
         std::vector<GameObject*> allTargets;
@@ -197,9 +204,7 @@ void Game::HandleGame() {
         }
     }
 
-    _woodCounter = CalculateTotalWood();
-    _stoneCounter = CalculateTotalStone();
-    _foodCounter = CalculateTotalFood();
+    CalculateAvailableResources();
 
     if (_townhall.IsDestroyed()) {
         Reset();
@@ -289,7 +294,7 @@ void Game::Draw() {
     }
     _ui.Draw();
     char buffer[50];
-    snprintf(buffer, sizeof(buffer), "Wood: %d / %d\nStone: %d / %d\nFood: %d / %d", (int)_woodCounter.x, (int)_woodCounter.y, (int)_stoneCounter.x, (int)_stoneCounter.y, (int)_foodCounter.x, (int)_foodCounter.y);
+    snprintf(buffer, sizeof(buffer), "Wood: %d / %d\nStone: %d / %d\nFood: %d / %d", (int)_availableResources._wood.x, (int)_availableResources._wood.y, (int)_availableResources._stone.x, (int)_availableResources._stone.y, (int)_availableResources._food.x, (int)_availableResources._food.y);
     if (_isRaidActive) {
         char buffer2[20];
         snprintf(buffer2, sizeof(buffer2), "Raiders: %d", (int)_raiders.size());
@@ -317,20 +322,39 @@ void Game::PlaceBuilding(Vector2 position) {
     if (!_buildingPlacingMode) return;
     Vector2 worldPos = GetScreenToWorld2D(position, _camera);
     switch(_previewBuildingType) {
-        case BuildingType::WoodStorage:
-            _woodStorages.push_back(WoodStorage(worldPos, _resourceManager.GetGameTexture("wood_storage")));
+        case BuildingType::WoodStorage: {
+            WoodStorage obj = WoodStorage(worldPos, _resourceManager.GetGameTexture("wood_storage"));
+            if (obj.CanBuild(_availableResources)) {
+                DecreaseAvailableResources(obj.GetRequirements());
+                _woodStorages.push_back(obj);
+            }
             break;
-        case BuildingType::StoneStorage:
-            _stoneStorages.push_back(StoneStorage(worldPos, _resourceManager.GetGameTexture("stone_storage")));
+        }
+        case BuildingType::StoneStorage: {
+            StoneStorage obj = StoneStorage(worldPos, _resourceManager.GetGameTexture("stone_storage"));
+            if (obj.CanBuild(_availableResources)) {
+                DecreaseAvailableResources(obj.GetRequirements());
+                _stoneStorages.push_back(obj);
+            }
             break;
-        case BuildingType::Farm:
-            _farms.push_back(Farm(worldPos, _resourceManager.GetGameTexture("farm")));
+        }
+        case BuildingType::Farm: {
+            Farm obj = Farm(worldPos, _resourceManager.GetGameTexture("farm"));
+            if (obj.CanBuild(_availableResources)) {
+                DecreaseAvailableResources(obj.GetRequirements());
+                _farms.push_back(obj);
+            }
             break;
+        }
         case BuildingType::LumberjackHouse:
             if (_lumberjacks.size() + _miners.size() + _farmers.size() < CalculateTotalWorkersAmount()) {
-                _lumberjackHouses.push_back(LumberjackHouse(worldPos, _resourceManager.GetGameTexture("lumberjack_house")));
-                _lumberjacks.push_back(Lumberjack(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("lumberjack"), worldPos));
-                _lumberjacks.back().SetHomePosition(worldPos);
+                LumberjackHouse obj = LumberjackHouse(worldPos, _resourceManager.GetGameTexture("lumberjack_house"));
+                if (obj.CanBuild(_availableResources)) {
+                    DecreaseAvailableResources(obj.GetRequirements());
+                    _lumberjackHouses.push_back(obj);
+                    _lumberjacks.push_back(Lumberjack(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("lumberjack"), worldPos));
+                    _lumberjacks.back().SetHomePosition(worldPos);
+                }
             } else {
                 _flashRed = true;
                 _flashTimer = 0.0f;
@@ -338,9 +362,13 @@ void Game::PlaceBuilding(Vector2 position) {
             break;
         case BuildingType::MinerHouse:
             if (_lumberjacks.size() + _miners.size() + _farmers.size() < CalculateTotalWorkersAmount()) {
-                _minerHouses.push_back(MinerHouse(worldPos, _resourceManager.GetGameTexture("miner_house")));
-                _miners.push_back(Miner(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("miner"), worldPos));
-                _miners.back().SetHomePosition(worldPos);
+                MinerHouse obj = MinerHouse(worldPos, _resourceManager.GetGameTexture("miner_house"));
+                if (obj.CanBuild(_availableResources)) {
+                    DecreaseAvailableResources(obj.GetRequirements());
+                    _minerHouses.push_back(obj);
+                    _miners.push_back(Miner(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("miner"), worldPos));
+                    _miners.back().SetHomePosition(worldPos);
+                }
             } else {
                 _flashRed = true;
                 _flashTimer = 0.0f;
@@ -348,16 +376,24 @@ void Game::PlaceBuilding(Vector2 position) {
             break;
         case BuildingType::FarmerHouse:
             if (_lumberjacks.size() + _miners.size() + _farmers.size() < CalculateTotalWorkersAmount()) {
-                _farmerHouses.push_back(FarmerHouse(worldPos, _resourceManager.GetGameTexture("farmer_house")));
-                _farmers.push_back(Farmer(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("farmer"), worldPos));
-                _farmers.back().SetHomePosition(worldPos);
+                FarmerHouse obj = FarmerHouse(worldPos, _resourceManager.GetGameTexture("farmer_house"));
+                if (obj.CanBuild(_availableResources)) {
+                    DecreaseAvailableResources(obj.GetRequirements());
+                    _farmerHouses.push_back(obj);
+                    _farmers.push_back(Farmer(Vector2 {worldPos.x + 50, worldPos.y + 50}, _resourceManager.GetGameTexture("farmer"), worldPos));
+                    _farmers.back().SetHomePosition(worldPos);
+                }
             } else {
                 _flashRed = true;
                 _flashTimer = 0.0f;
             }
             break;
         case BuildingType::Barrack:
-            _barracks.push_back(Barrack(worldPos, _resourceManager.GetGameTexture("barrack")));
+            Barrack obj = Barrack(worldPos, _resourceManager.GetGameTexture("barrack"));
+            if (obj.CanBuild(_availableResources)) {
+                DecreaseAvailableResources(obj.GetRequirements());
+                _barracks.push_back(obj);
+            }
             break;
     }
     _buildingPlacingMode = false;
@@ -386,6 +422,12 @@ void Game::ToggleBuildingPlacementMode(BuildingType type) {
         _buildingPlacingMode = true;
         _previewBuildingType = type;
     }
+}
+
+void Game::CalculateAvailableResources() {
+    _availableResources._wood = CalculateTotalWood();
+    _availableResources._stone = CalculateTotalStone();
+    _availableResources._food = CalculateTotalFood();
 }
 
 Vector2 Game::CalculateTotalWood() {
@@ -477,11 +519,16 @@ void Game::Reset() {
     _buildingPlacingMode = false;
     _ui.Reset();
 
-    _townhall = Townhall(Vector2{700.0f, 700.0f});
+    _townhall = Townhall(Vector2{670.0f, 670.0f});
     _townhall.SetTexture(_resourceManager.GetGameTexture("townhall"));
     _player.SetPosition(Vector2{ (float)(500/2), (float)(500/2)});
     _player.SetTexture(_resourceManager.GetGameTexture("player"));
-
+    _woodStorages.push_back(WoodStorage(Vector2{500.0f, 500.0f}, _resourceManager.GetGameTexture("wood_storage")));
+    _woodStorages.back().AddResource(_woodStorages.back().GetCapacity());
+    _stoneStorages.push_back(StoneStorage(Vector2{500.0f, 670.0f}, _resourceManager.GetGameTexture("stone_storage")));
+    _stoneStorages.back().AddResource(_stoneStorages.back().GetCapacity());
+    _farms.push_back(Farm(Vector2{670.0f, 500.0f}, _resourceManager.GetGameTexture("farm")));
+    _farms.back().AddResource(_farms.back().GetCapacity());
 }
 
 int Game::CalculateTotalWorkersAmount() {
@@ -490,4 +537,58 @@ int Game::CalculateTotalWorkersAmount() {
                                   return partialSum + obj.GetWorkersAmount();
                               });
     return workers;
+}
+
+void Game::DecreaseAvailableResources(Requirements req) {
+    if (req._wood != 0) {
+        while (req._wood > 0) {
+            for (auto& st: _woodStorages) {
+                int count = st.GetCurrentResourceCount();
+                if (count != 0) {
+                    if (count < req._wood) {
+                        req._wood -= count;
+                        st.AddResource(count * -1);
+                    }
+                    else {
+                        st.AddResource(req._wood * -1);
+                        req._wood = 0;
+                    }
+                }
+            }
+        }
+    }
+    if (req._stone != 0) {
+        while (req._stone > 0) {
+            for (auto& st: _stoneStorages) {
+                int count = st.GetCurrentResourceCount();
+                if (count != 0) {
+                    if (count < req._stone) {
+                        req._stone -= count;
+                        st.AddResource(count * -1);
+                    }
+                    else {
+                        st.AddResource(req._stone * -1);
+                        req._stone = 0;
+                    }
+                }
+            }
+        }
+    }
+    if (req._food != 0) {
+        while (req._food > 0) {
+            for (auto& st: _farms) {
+                int count = st.GetCurrentResourceCount();
+                if (count != 0) {
+                    if (count < req._food) {
+                        req._food -= count;
+                        st.AddResource(count * -1);
+                    }
+                    else {
+                        st.AddResource(req._food * -1);
+                        req._food = 0;
+                    }
+                }
+            }
+        }
+    }
 }

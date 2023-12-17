@@ -8,6 +8,7 @@
 #include <string>
 #include "mathFunctions.h"
 #include "Map.h"
+#include "Resources.h"
 
 class GameObject {
 protected:
@@ -34,60 +35,48 @@ public:
     const float GetVelocity() const;
 };
 
-
-class WorkerHouse: public GameObject {
+class Building: public GameObject {
 protected:
-    int _durability = 100;
-    const int _maxDurability = 100;
+    Requirements _requirements;
 public:
+    Building(const Vector2 pos, const Vector2 size, const Texture2D sprite);
+    Building(const Vector2 pos, const Vector2 size);
+    bool CanBuild(const Resources& availableResources);
+    const Requirements& GetRequirements() const;
+};
 
+
+class WorkerHouse: public Building {
+public:
     WorkerHouse(const Vector2 pos, const Texture2D sprite);
-
-    virtual int GetCostFood() const = 0;
-    virtual int GetCostWood() const = 0;
-    virtual int GetCostStone() const = 0;
-//    void DrawOpacity() const;
 };
 
 class LumberjackHouse: public WorkerHouse {
 public:
     LumberjackHouse(const Vector2 pos, const Texture2D sprite);
-
-    int GetCostFood() const override;
-    int GetCostWood() const override;
-    int GetCostStone() const override;
 };
 class MinerHouse: public WorkerHouse {
 public:
     MinerHouse(const Vector2 pos, const Texture2D sprite);
-
-    int GetCostFood() const override;
-    int GetCostWood() const override;
-    int GetCostStone() const override;
 };
 class FarmerHouse: public WorkerHouse {
 public:
     FarmerHouse(const Vector2 pos, const Texture2D sprite);
-
-    int GetCostFood() const override;
-    int GetCostWood() const override;
-    int GetCostStone() const override;
 };
 
 
 
-
-class Storage: public GameObject {
+class Storage: public Building {
 protected:
     int _resourceCount = 0;
-    int _maxCapacity = 10;
+    int _maxCapacity = 20;
     float _durability = 5.0f;
     bool _destroyed = false;
 public:
     Storage(const Vector2 pos, const Texture2D sprite);
     Storage(const Vector2 pos);
 
-    bool AddResource(int amount);
+    virtual bool AddResource(int amount);
     int GetCurrentResourceCount() const;
     int GetCapacity() const;
     void TakeDamage(int damage);
@@ -251,11 +240,13 @@ public:
 class Barrack: public Storage {
 private:
     std::vector<Knight> _knights;
+    int _knightCost = 4;
 public:
     Barrack(const Vector2 pos, const Texture2D sprite);
-    void Update(ResourceManager& resourceManager, Camera2D& camera, std::vector<Raider>& raiders, bool isRaidActive);
+    void Update(ResourceManager& resourceManager, Camera2D& camera, std::vector<Raider>& raiders, bool isRaidActive, std::vector<Farm>& farms, const Resources& res);
     void MobilizeKnights();
     void DemobilizeKnights();
+    bool AddResource (int count, std::vector<Farm>& farms, const Resources& res);
     void Draw() const override;
 };
 

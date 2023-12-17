@@ -11,6 +11,7 @@
 #include "BuildingType.h"
 #include "UI.h"
 #include "Menu.h"
+#include "Resources.h"
 #include "numeric"
 
 class Game {
@@ -51,9 +52,10 @@ private:
 
     bool _isRaidActive = false;
 
-    Vector2 _woodCounter;
-    Vector2 _stoneCounter;
-    Vector2 _foodCounter;
+    Resources _availableResources;
+//    Vector2 _woodCounter;
+//    Vector2 _stoneCounter;
+//    Vector2 _foodCounter;
 
     bool _flashRed = false;
     float _flashDuration = 0.5f;
@@ -74,10 +76,13 @@ public:
     void PlaceBuilding(Vector2 position);
     void ToggleBuildingPlacementMode(BuildingType type);
     Vector2 GetMapSize() const;
+
+    void CalculateAvailableResources();
     Vector2 CalculateTotalWood();
     Vector2 CalculateTotalStone();
     Vector2 CalculateTotalFood();
     int CalculateTotalWorkersAmount();
+    void DecreaseAvailableResources(Requirements req);
 
     void StartRaidEvent();
     void HandleRaid();

@@ -15,7 +15,7 @@ void Menu::Initialize(ResourceManager &resourceManager) {
 
 void Menu::Draw() {
     BeginDrawing();
-    ClearBackground(WHITE);
+    ClearBackground(RAYWHITE);
     _startButton.Draw();
     EndDrawing();
 }
