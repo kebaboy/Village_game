@@ -47,13 +47,14 @@ void Game::Initialize() {
     _resourceManager.LoadGameTexture("barrack", "barrack.png");
     _resourceManager.LoadGameTexture("knight", "knight.png");
     _resourceManager.LoadGameTexture("raider", "raider.png");
-    _resourceManager.LoadGameTexture("townhall", "townhall.png");
+    _resourceManager.LoadGameTexture("church", "church.png");
     _resourceManager.LoadGameTexture("sleep", "sleep.png");
     _resourceManager.LoadGameTexture("start", "start_btn.png");
+    _resourceManager.LoadGameTexture("game-over", "game-over.png");
     _menu.Initialize(_resourceManager);
     _map.Generate();
     _player.SetTexture(_resourceManager.GetGameTexture("player"));
-    _townhall.SetTexture(_resourceManager.GetGameTexture("townhall"));
+    _townhall.SetTexture(_resourceManager.GetGameTexture("church"));
     _woodStorages.push_back(WoodStorage(Vector2{500.0f, 500.0f}, _resourceManager.GetGameTexture("wood_storage")));
     _woodStorages.back().AddResource(_woodStorages.back().GetCapacity());
     _stoneStorages.push_back(StoneStorage(Vector2{500.0f, 670.0f}, _resourceManager.GetGameTexture("stone_storage")));
@@ -118,7 +119,7 @@ void Game::HandleGame() {
     if (_elapsedRaidTime < _raidEventInterval) {
         _elapsedRaidTime += GetFrameTime();
     } else if (!_isRaidActive) {
-        int knightsCount = CalculateTotalKnights();
+        int knightsCount = 10;
         if (knightsCount >= 3) {
             StartRaidEvent(knightsCount - 2);
         }
@@ -210,9 +211,13 @@ void Game::HandleGame() {
     }
 
     CalculateAvailableResources();
+    _townhall.Update();
 
     if (_townhall.IsDestroyed()) {
-        Reset();
+        _defeatMessageTimer += GetFrameTime();
+        if (_defeatMessageTimer >= _defeatMessageDuration) {
+            Reset();
+        }
     }
 }
 
@@ -319,6 +324,9 @@ void Game::Draw() {
     } else _flashRed = false;
 
     DrawFPS(20, 140);
+
+
+    if (_townhall.IsDestroyed()) DrawTexturePro(_resourceManager.GetGameTexture("game-over"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("game-over").width, (float)_resourceManager.GetGameTexture("game-over").height}, Rectangle{(float)_screenWidth / 2 - 800.0f / 2, (float)_screenHeight / 2 - 150.0f / 2, 800.0f, 150.0f}, Vector2{0, 0}, 0.0f, WHITE);
 
     EndDrawing();
 }
@@ -532,6 +540,7 @@ void Game::EndRaidEvent() {
 void Game::Reset() {
     _currentState = GameState::MainMenu;
     _isRaidActive = false;
+    _defeatMessageTimer = 0.0f;
     _raiders.clear();
     _barracks.clear();
     _lumberjacks.clear();
@@ -548,7 +557,7 @@ void Game::Reset() {
 
     _elapsedRaidTime = 0.0f;
     _townhall = Townhall(Vector2{670.0f, 670.0f});
-    _townhall.SetTexture(_resourceManager.GetGameTexture("townhall"));
+    _townhall.SetTexture(_resourceManager.GetGameTexture("church"));
     _player.SetPosition(Vector2{ (float)(500/2), (float)(500/2)});
     _player.SetTexture(_resourceManager.GetGameTexture("player"));
     _woodStorages.push_back(WoodStorage(Vector2{500.0f, 500.0f}, _resourceManager.GetGameTexture("wood_storage")));

@@ -86,8 +86,14 @@ public:
 };
 
 class Townhall: public Storage {
+    int _numFrames = 7;
+    int _currentFrame = 0;
+    float _frameDuration = 1.0f;
+    float _frameTimer = 0.0f;
 public:
     Townhall(const Vector2 pos);
+    void Draw() const override;
+    void Update() override;
 };
 
 class WoodStorage: public Storage {

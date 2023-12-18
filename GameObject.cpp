@@ -148,6 +148,17 @@ void Storage::TakeDamage(int damage) {
 
 Townhall::Townhall(const Vector2 pos): Storage(pos) {};
 
+void Townhall::Draw() const {
+    DrawTexturePro(_sprite, Rectangle {0.0f + ((float)_sprite.width / _numFrames) * (_currentFrame % _numFrames), 0.0f, (float)_sprite.width / _numFrames, (float)_sprite.height}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
+}
+
+void Townhall::Update() {
+    if (_destroyed) {
+        _frameTimer += GetFrameTime();
+        _currentFrame = static_cast<int>(_frameTimer / _frameDuration);
+    }
+}
+
 WoodStorage::WoodStorage(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {_requirements = Requirements(15, 10, 0);}
 
 StoneStorage::StoneStorage(const Vector2 pos, const Texture2D sprite): Storage(pos, sprite) {_requirements = Requirements(10, 15, 0);}
