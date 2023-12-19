@@ -8,9 +8,9 @@
 Game::Game() : _screenWidth(1000), _screenHeight(650),
                 _currentState(GameState::InGame),
                 _menu(Menu(_screenWidth, _screenHeight)),
-                _map(40, 30, 100),
-                _player(Vector2{ (float)(500/2), (float)(500/2)}, Vector2{float(50), float(50)}),
-                _townhall(Vector2{670.0f, 670.0f}),
+                _map(40, 40, 100),
+                _player(Vector2{ (float)(20 * 100) + 53, (float)(20 * 100) + 110}, Vector2{float(50), float(50)}),
+                _townhall(Vector2{(float)(20 * 100), (float)(20 * 100)}),
                 _availableResources(Vector2{0, 0}, Vector2{0, 0}, Vector2{0, 0})
                 {}
 
@@ -51,15 +51,18 @@ void Game::Initialize() {
     _resourceManager.LoadGameTexture("sleep", "sleep.png");
     _resourceManager.LoadGameTexture("start", "start_btn.png");
     _resourceManager.LoadGameTexture("game-over", "game-over.png");
+    _resourceManager.LoadGameTexture("wheat", "wheat.png");
+    _resourceManager.LoadGameTexture("stone-r", "stone-r.png");
+    _resourceManager.LoadGameTexture("wood", "wood.png");
     _menu.Initialize(_resourceManager);
     _map.Generate();
     _player.SetTexture(_resourceManager.GetGameTexture("player"));
     _townhall.SetTexture(_resourceManager.GetGameTexture("church"));
-    _woodStorages.push_back(WoodStorage(Vector2{500.0f, 500.0f}, _resourceManager.GetGameTexture("wood_storage")));
+    _woodStorages.push_back(WoodStorage(Vector2{_townhall.GetPosition().x - 170.0f, _townhall.GetPosition().y - 170.0f}, _resourceManager.GetGameTexture("wood_storage")));
     _woodStorages.back().AddResource(_woodStorages.back().GetCapacity());
-    _stoneStorages.push_back(StoneStorage(Vector2{500.0f, 670.0f}, _resourceManager.GetGameTexture("stone_storage")));
+    _stoneStorages.push_back(StoneStorage(Vector2{_townhall.GetPosition().x - 170.0f, _townhall.GetPosition().y}, _resourceManager.GetGameTexture("stone_storage")));
     _stoneStorages.back().AddResource(_stoneStorages.back().GetCapacity());
-    _farms.push_back(Farm(Vector2{670.0f, 500.0f}, _resourceManager.GetGameTexture("farm")));
+    _farms.push_back(Farm(Vector2{_townhall.GetPosition().x, _townhall.GetPosition().y - 170.0f}, _resourceManager.GetGameTexture("farm")));
     _farms.back().AddResource(_farms.back().GetCapacity());
     _camera = {0};
     _camera.target = _player.GetPosition();
@@ -68,6 +71,57 @@ void Game::Initialize() {
     _camera.zoom = 1.0f;
     _ui.Initialize(Vector2 {(float)_screenWidth, (float)_screenHeight}, _resourceManager, this);
     SetTargetFPS(60);
+
+    std::vector<ResourceInfo> lumberjackHouse = {
+            {"wood", _resourceManager.GetGameTexture("wood"), 5},
+            {"stone", _resourceManager.GetGameTexture("stone-r"), 3},
+            {"wheat", _resourceManager.GetGameTexture("wheat"), 3}
+    };
+    std::vector<ResourceInfo> minerHouse = {
+            {"wood", _resourceManager.GetGameTexture("wood"), 3},
+            {"stone", _resourceManager.GetGameTexture("stone-r"), 5},
+            {"wheat", _resourceManager.GetGameTexture("wheat"), 3}
+    };
+    std::vector<ResourceInfo> farmerHouse = {
+            {"wood", _resourceManager.GetGameTexture("wood"), 5},
+            {"stone", _resourceManager.GetGameTexture("stone-r"), 5},
+            {"wheat", _resourceManager.GetGameTexture("wheat"), 3}
+    };
+    std::vector<ResourceInfo> woodStorage = {
+            {"wood", _resourceManager.GetGameTexture("wood"), 15},
+            {"stone", _resourceManager.GetGameTexture("stone-r"), 10},
+            {"wheat", _resourceManager.GetGameTexture("wheat"), 0}
+    };
+    std::vector<ResourceInfo> stoneStorage = {
+            {"wood", _resourceManager.GetGameTexture("wood"), 10},
+            {"stone", _resourceManager.GetGameTexture("stone-r"), 15},
+            {"wheat", _resourceManager.GetGameTexture("wheat"), 0}
+    };
+    std::vector<ResourceInfo> farm = {
+            {"wood", _resourceManager.GetGameTexture("wood"), 7},
+            {"stone", _resourceManager.GetGameTexture("stone-r"), 7},
+            {"wheat", _resourceManager.GetGameTexture("wheat"), 15}
+    };
+    std::vector<ResourceInfo> barrack = {
+            {"wood", _resourceManager.GetGameTexture("wood"), 12},
+            {"stone", _resourceManager.GetGameTexture("stone-r"), 12},
+            {"wheat", _resourceManager.GetGameTexture("wheat"), 5}
+    };
+//    std::vector<ResourceInfo> minerHouse = {
+//            {"wood", _resourceManager.GetGameTexture("wood"), 50},
+//            {"stone", _resourceManager.GetGameTexture("wood"), 30},
+//            {"stone", _resourceManager.GetGameTexture("wood"), 30}
+//    };
+
+// Fill in the buildingResourceInfo map
+    _buildingResourceInfo[BuildingType::LumberjackHouse] = lumberjackHouse;
+    _buildingResourceInfo[BuildingType::MinerHouse] = minerHouse;
+    _buildingResourceInfo[BuildingType::FarmerHouse] = farmerHouse;
+    _buildingResourceInfo[BuildingType::WoodStorage] = woodStorage;
+    _buildingResourceInfo[BuildingType::StoneStorage] = stoneStorage;
+    _buildingResourceInfo[BuildingType::Farm] = farm;
+    _buildingResourceInfo[BuildingType::Barrack] = barrack;
+// ... add entries for other building types
 }
 
 void Game::Update() {
@@ -302,7 +356,7 @@ void Game::Draw() {
                 break;
         }
     }
-    _ui.Draw();
+    _ui.Draw(_buildingResourceInfo);
     char buffer[50];
     snprintf(buffer, sizeof(buffer), "Wood: %d / %d\nStone: %d / %d\nFood: %d / %d", (int)_availableResources._wood.x, (int)_availableResources._wood.y, (int)_availableResources._stone.x, (int)_availableResources._stone.y, (int)_availableResources._food.x, (int)_availableResources._food.y);
     if (_isRaidActive) {
@@ -556,15 +610,16 @@ void Game::Reset() {
     _ui.Reset();
 
     _elapsedRaidTime = 0.0f;
-    _townhall = Townhall(Vector2{670.0f, 670.0f});
+    _townhall = Townhall(Vector2{(float)(20 * 100), (float)(20 * 100)});
     _townhall.SetTexture(_resourceManager.GetGameTexture("church"));
-    _player.SetPosition(Vector2{ (float)(500/2), (float)(500/2)});
+    _player.SetPosition(Vector2{(float)(20 * 100) + _townhall.GetSize().x / 2 - 23, (float)(20 * 100) + 110});
     _player.SetTexture(_resourceManager.GetGameTexture("player"));
-    _woodStorages.push_back(WoodStorage(Vector2{500.0f, 500.0f}, _resourceManager.GetGameTexture("wood_storage")));
+
+    _woodStorages.push_back(WoodStorage(Vector2{_townhall.GetPosition().x - 170.0f, _townhall.GetPosition().y - 170.0f}, _resourceManager.GetGameTexture("wood_storage")));
     _woodStorages.back().AddResource(_woodStorages.back().GetCapacity());
-    _stoneStorages.push_back(StoneStorage(Vector2{500.0f, 670.0f}, _resourceManager.GetGameTexture("stone_storage")));
+    _stoneStorages.push_back(StoneStorage(Vector2{_townhall.GetPosition().x - 170.0f, _townhall.GetPosition().y}, _resourceManager.GetGameTexture("stone_storage")));
     _stoneStorages.back().AddResource(_stoneStorages.back().GetCapacity());
-    _farms.push_back(Farm(Vector2{670.0f, 500.0f}, _resourceManager.GetGameTexture("farm")));
+    _farms.push_back(Farm(Vector2{_townhall.GetPosition().x, _townhall.GetPosition().y - 170.0f}, _resourceManager.GetGameTexture("farm")));
     _farms.back().AddResource(_farms.back().GetCapacity());
 }
 

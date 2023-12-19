@@ -178,6 +178,43 @@ void BuildingButton::Build() {
     _game->ToggleBuildingPlacementMode(_buildingType);
 };
 
+void BuildingButton::Draw(std::map<BuildingType, std::vector<ResourceInfo>>& resourcesInfo) {
+    if (!_visible) return;
+    DrawTexturePro(_sprite, Rectangle{0.0f, 0.0f, (float)_sprite.width, (float)_sprite.height}, Rectangle{_position.x, _position.y, _size.x, _size.y}, Vector2{0, 0}, 0.0f, WHITE);
+    if (CheckCollisionPointRec(GetMousePosition(), Rectangle {_position.x, _position.y, _size.x, _size.y})) {
+        std::vector<ResourceInfo> resources = resourcesInfo[_buildingType];
+
+        // Draw tooltip background
+        // ...
+
+        // Draw resource images and values
+        float x = _position.x - 9.0f;
+        for (const auto& resource : resources) {
+            if (std::to_string(resource.resourceValue).length() > 1) {
+                x -= 3.0f;
+            }
+        }
+        float y = _position.y + _size.y;
+        for (const auto& resource : resources) {
+            float spacing = 10.0f;
+            DrawTexturePro(resource.resourceImage, Rectangle{0.0f, 0.0f, (float)resource.resourceImage.width, (float)resource.resourceImage.height}, Rectangle{x, y, 17.0f, 17.0f}, Vector2{0, 0}, 0.0f, WHITE);
+            DrawText(std::to_string(resource.resourceValue).c_str(), x + 20, y + 2, 15, WHITE);
+            if (std::to_string(resource.resourceValue).length() > 1) spacing+=5;
+            // Update x position for the next resource
+            x += 20 + spacing;
+        }
+    }
+}
+
 CloseButton::CloseButton(float x, float y, float w, float h, bool visibility, Texture2D texture,
                          UIPanel *panelToClose): UIButton(x, y, w, h, visibility, texture, [panelToClose]() {panelToClose->SetVisibility(
         false);}) {}
+
+void BuildCategoryPanel::Draw(std::map<BuildingType, std::vector<ResourceInfo>> &resources) {
+    if (!_visible) return;
+    for (const auto& elem : _elements) {
+        if (auto* buildingButton = dynamic_cast<BuildingButton*>(elem.get())) {
+            buildingButton->Draw(resources);
+        }
+    }
+}

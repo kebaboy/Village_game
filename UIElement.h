@@ -8,6 +8,7 @@
 #include "raylib.h"
 #include "string"
 #include "BuildingType.h"
+#include "map"
 class Game;
 
 class UIElement {
@@ -77,7 +78,7 @@ public:
 
 class BuildCategoryPanel: public UIPanel {
 public:
-
+    void Draw(std::map<BuildingType, std::vector<ResourceInfo>>& resources);
 };
 
 class BuildCategoryButton: public UIButton {
@@ -100,6 +101,7 @@ public:
     BuildingButton(float x, float y, float w, float h, bool visibility, Texture2D texture, BuildingType type, Game* game);
     BuildingType GetBuildingType() const;
     void Build();
+    void Draw(std::map<BuildingType, std::vector<ResourceInfo>>& resources);
 };
 
 class CloseButton: public UIButton {

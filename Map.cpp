@@ -15,7 +15,7 @@ void Map::Generate() {
             if (r < 2) _tiles[y][x] = Tile({ x * _tileSize, y * _tileSize }, TileType::GRASS, TileType::TREE);
             else if (r < 4) _tiles[y][x] = Tile({ x * _tileSize, y * _tileSize}, TileType::GRASS, TileType::STONE);
             else _tiles[y][x] = Tile({ x * _tileSize, y * _tileSize}, TileType::GRASS);
-            if (y >= 4 && y <= 8 && x >= 4 && x <= 8) _tiles[y][x] = Tile({ x * _tileSize, y * _tileSize}, TileType::GRASS);
+            if (y >= 17 && y <= 22 && x >= 17 && x <= 22) _tiles[y][x] = Tile({ x * _tileSize, y * _tileSize}, TileType::GRASS);
         }
     }
 }

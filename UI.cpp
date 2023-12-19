@@ -21,22 +21,22 @@ void UI::Initialize(Vector2 screenSize, ResourceManager& resourceManager, Game* 
     _buildMenu.LinkPanel(&_storageMenu);
     _buildMenu.LinkPanel(&_houseMenu);
     _buildMenu.LinkPanel(&_defenceMenu);
-    _houseMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 490, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("lumberjack_house"), BuildingType::LumberjackHouse, _game));
-    _houseMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 390, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("miner_house"), BuildingType::MinerHouse, _game));
-    _houseMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 290, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("farmer_house"), BuildingType::FarmerHouse, _game));
-    _storageMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 490, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("wood_storage"), BuildingType::WoodStorage, _game));
-    _storageMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 390, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("stone_storage"), BuildingType::StoneStorage, _game));
-    _storageMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 290, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("farm"), BuildingType::Farm, _game));
-    _defenceMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 490, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("barrack"), BuildingType::Barrack, _game));
+    _houseMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 480, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("lumberjack_house"), BuildingType::LumberjackHouse, _game));
+    _houseMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 380, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("miner_house"), BuildingType::MinerHouse, _game));
+    _houseMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 280, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("farmer_house"), BuildingType::FarmerHouse, _game));
+    _storageMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 480, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("wood_storage"), BuildingType::WoodStorage, _game));
+    _storageMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 380, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("stone_storage"), BuildingType::StoneStorage, _game));
+    _storageMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 280, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("farm"), BuildingType::Farm, _game));
+    _defenceMenu.AddElement(std::make_unique<BuildingButton>(screenSize.x - 480, screenSize.y - 100, 70, 70, true, resourceManager.GetGameTexture("barrack"), BuildingType::Barrack, _game));
 
 }
 
-void UI::Draw() {
+void UI::Draw(std::map<BuildingType, std::vector<ResourceInfo>>& resources) {
     _mainPanel.Draw();
     _buildMenu.Draw();
-    _storageMenu.Draw();
-    _houseMenu.Draw();
-    _defenceMenu.Draw();
+    _storageMenu.Draw(resources);
+    _houseMenu.Draw(resources);
+    _defenceMenu.Draw(resources);
 }
 
 void UI::Update() {

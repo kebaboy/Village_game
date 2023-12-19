@@ -9,7 +9,7 @@
 #include "UIElement.h"
 #include "ResourceManager.h"
 class Game;
-
+struct ResourceInfo;
 class UI {
 private:
     UIPanel _mainPanel;
@@ -24,7 +24,7 @@ public:
     void AddElement(std::unique_ptr<UIElement> element);
     void RemoveElement(/*...*/);
     UIElement* GetElement(size_t id);
-    void Draw();
+    void Draw(std::map<BuildingType, std::vector<ResourceInfo>>& resources);
     void Update();
     void Reset();
 };

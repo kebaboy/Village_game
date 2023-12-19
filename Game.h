@@ -66,6 +66,7 @@ private:
     float _defeatMessageTimer = 0.0f;
     const float _defeatMessageDuration = 7.0f;
 
+    std::map<BuildingType, std::vector<ResourceInfo>> _buildingResourceInfo;
 public:
     Game();
     void Initialize();

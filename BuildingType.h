@@ -15,4 +15,10 @@ enum class BuildingType {
     Barrack,
 };
 
+struct ResourceInfo {
+    std::string resourceName;
+    Texture2D resourceImage;
+    int resourceValue;
+};
+
 #endif //VILLAGE_BUILDINGTYPE_H
