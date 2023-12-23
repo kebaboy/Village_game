@@ -6,7 +6,7 @@
 #include "iostream"
 
 Game::Game() : _screenWidth(1000), _screenHeight(650),
-                _currentState(GameState::InGame),
+                _currentState(GameState::MainMenu),
                 _menu(Menu(_screenWidth, _screenHeight)),
                 _map(40, 40, 100),
                 _player(Vector2{ (float)(20 * 100) + 53, (float)(20 * 100) + 110}, Vector2{float(50), float(50)}),
@@ -54,6 +54,8 @@ void Game::Initialize() {
     _resourceManager.LoadGameTexture("wheat", "wheat.png");
     _resourceManager.LoadGameTexture("stone-r", "stone-r.png");
     _resourceManager.LoadGameTexture("wood", "wood.png");
+    _resourceManager.LoadGameTexture("village", "village.png");
+    _resourceManager.LoadGameTexture("menu-background", "menu-background.png");
     _menu.Initialize(_resourceManager);
     _map.Generate();
     _player.SetTexture(_resourceManager.GetGameTexture("player"));
@@ -173,7 +175,7 @@ void Game::HandleGame() {
     if (_elapsedRaidTime < _raidEventInterval) {
         _elapsedRaidTime += GetFrameTime();
     } else if (!_isRaidActive) {
-        int knightsCount = 10;
+        int knightsCount = CalculateTotalKnights();
         if (knightsCount >= 3) {
             StartRaidEvent(knightsCount - 2);
         }
@@ -377,7 +379,7 @@ void Game::Draw() {
         _flashTimer += GetFrameTime();
     } else _flashRed = false;
 
-    DrawFPS(20, 140);
+//    DrawFPS(20, 140);
 
 
     if (_townhall.IsDestroyed()) DrawTexturePro(_resourceManager.GetGameTexture("game-over"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("game-over").width, (float)_resourceManager.GetGameTexture("game-over").height}, Rectangle{(float)_screenWidth / 2 - 800.0f / 2, (float)_screenHeight / 2 - 150.0f / 2, 800.0f, 150.0f}, Vector2{0, 0}, 0.0f, WHITE);

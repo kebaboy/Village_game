@@ -16,6 +16,8 @@ private:
     MenuState _currentMenuState = MenuState::InMenu;
     int _screenWidth;
     int _screenHeight;
+    Texture2D _gameTitle;
+    Texture2D _background;
     UIButton _startButton;
 public:
     Menu(int sW, int sH);

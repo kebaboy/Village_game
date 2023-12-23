@@ -7,19 +7,10 @@ add_executable(Village main.cpp
         Game.cpp
         ResourceManager.cpp
         GameObject.cpp
-        GameObject.h
         UI.cpp
-        UI.h
         UIElement.cpp
-        UIElement.h
         Map.cpp
-        Map.h
-        mathFunctions.h
-        BuildingType.h
-        Events.h
-        Menu.h
         Menu.cpp
-        Resources.h
         Resources.cpp
 )
 

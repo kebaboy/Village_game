@@ -69,7 +69,7 @@ public:
 class Storage: public Building {
 protected:
     int _resourceCount = 0;
-    int _maxCapacity = 100;
+    int _maxCapacity = 20;
     float _durability = 5.0f;
     bool _destroyed = false;
 public:

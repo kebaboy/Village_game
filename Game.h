@@ -62,7 +62,7 @@ private:
     float _flashTimer = 0.0f;
 
     float _elapsedRaidTime = 0.0f;
-    const float _raidEventInterval = 10.0f;
+    const float _raidEventInterval = 180.0f;
     float _defeatMessageTimer = 0.0f;
     const float _defeatMessageDuration = 7.0f;
 
