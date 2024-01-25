@@ -163,6 +163,7 @@ void Game::HandleGame() {
     if (IsKeyDown(KEY_DOWN)) {
         PlayerMove({0, plVelocity});
     }
+    _player.Update();
     UpdateCamera();
     _ui.Update();
 
@@ -336,24 +337,31 @@ void Game::Draw() {
     if (_buildingPlacingMode) {
         switch (_previewBuildingType) {
             case BuildingType::WoodStorage:
+                DrawRectangleLinesEx(Rectangle{GetMousePosition().x, GetMousePosition().y, 150.0f, 150.0f}, 2.5f, GRAY);
                 DrawTexturePro(_resourceManager.GetGameTexture("wood_storage"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("wood_storage").width, (float)_resourceManager.GetGameTexture("wood_storage").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 150.0f, 150.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
                 break;
             case BuildingType::StoneStorage:
+                DrawRectangleLinesEx(Rectangle{GetMousePosition().x, GetMousePosition().y, 150.0f, 150.0f}, 2.5f, GRAY);
                 DrawTexturePro(_resourceManager.GetGameTexture("stone_storage"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("stone_storage").width, (float)_resourceManager.GetGameTexture("stone_storage").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 150.0f, 150.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
                 break;
             case BuildingType::Farm:
+                DrawRectangleLinesEx(Rectangle{GetMousePosition().x, GetMousePosition().y, 150.0f, 150.0f}, 2.5f, GRAY);
                 DrawTexturePro(_resourceManager.GetGameTexture("farm"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("farm").width, (float)_resourceManager.GetGameTexture("farm").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 150.0f, 150.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
                 break;
             case BuildingType::LumberjackHouse:
+                DrawRectangleLinesEx(Rectangle{GetMousePosition().x, GetMousePosition().y, 100.0f, 100.0f}, 2.5f, GRAY);
                 DrawTexturePro(_resourceManager.GetGameTexture("lumberjack_house"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("lumberjack_house").width, (float)_resourceManager.GetGameTexture("lumberjack_house").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 100.0f, 100.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
                 break;
             case BuildingType::MinerHouse:
+                DrawRectangleLinesEx(Rectangle{GetMousePosition().x, GetMousePosition().y, 100.0f, 100.0f}, 2.5f, GRAY);
                 DrawTexturePro(_resourceManager.GetGameTexture("miner_house"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("miner_house").width, (float)_resourceManager.GetGameTexture("miner_house").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 100.0f, 100.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
                 break;
             case BuildingType::FarmerHouse:
+                DrawRectangleLinesEx(Rectangle{GetMousePosition().x, GetMousePosition().y, 100.0f, 100.0f}, 2.5f, GRAY);
                 DrawTexturePro(_resourceManager.GetGameTexture("farmer_house"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("farmer_house").width, (float)_resourceManager.GetGameTexture("farmer_house").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 100.0f, 100.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
                 break;
             case BuildingType::Barrack:
+                DrawRectangleLinesEx(Rectangle{GetMousePosition().x, GetMousePosition().y, 150.0f, 150.0f}, 2.5f, GRAY);
                 DrawTexturePro(_resourceManager.GetGameTexture("barrack"), Rectangle{0.0f, 0.0f, (float)_resourceManager.GetGameTexture("barrack").width, (float)_resourceManager.GetGameTexture("barrack").height}, Rectangle{GetMousePosition().x, GetMousePosition().y, 150.0f, 150.0f}, Vector2{0, 0}, 0.0f, Color{255, 255, 255, 128 });
                 break;
         }

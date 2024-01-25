@@ -73,7 +73,33 @@ bool MovingGameObject::IsAtTarget(const Vector2 target) {
 Player::Player(const Vector2 pos, const Vector2 size) : GameObject(pos, size) {}
 
 void Player::Draw() const {
-    DrawTexturePro(_sprite, Rectangle {0.0f, 0.0f, (float)_sprite.width/4, (float)_sprite.height/4 - 7}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
+    DrawTexturePro(_sprite, Rectangle {(float)(_currentFrame * _sprite.width / _numCols), (float)(_animationState * _sprite.height / _numRows), (float)_sprite.width/4, (float)_sprite.height/4 - 7}, Rectangle{_position.x,_position.y, _size.x, _size.y}, Vector2{0,0}, 0.0f, WHITE);
+}
+
+void Player::Update() {
+    _elapsedFrames += GetFrameTime();
+
+    if (_elapsedFrames >= _animationSpeed) {
+        _currentFrame = (_currentFrame + 1) % _numCols;
+        _elapsedFrames = 0;
+    }
+
+    // Determine animation state based on user input (for simplicity, using arrow keys)
+    int horizontalInput = IsKeyDown(KEY_RIGHT) - IsKeyDown(KEY_LEFT);
+    int verticalInput = IsKeyDown(KEY_DOWN) - IsKeyDown(KEY_UP);
+
+    if (horizontalInput > 0) {
+        _animationState = 1; // Right
+    } else if (horizontalInput < 0) {
+        _animationState = 2; // Left
+    } else if (verticalInput > 0) {
+        _animationState = 0; // Down
+    } else if (verticalInput < 0) {
+        _animationState = 3; // Up
+    } else {
+        _animationState = 4; // Idle
+        _currentFrame = 0;
+    }
 }
 
 const float Player::GetVelocity() const {

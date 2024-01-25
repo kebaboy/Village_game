@@ -28,10 +28,17 @@ public:
 
 class Player: public GameObject {
 private:
+    const int _numRows = 4;
+    const int _numCols = 4;
+    int _currentFrame = 0;
+    int _animationState;
+    float _elapsedFrames = 0;
+    const float _animationSpeed = 0.2f;
     const float _playerVelocity = 3.0f;
 public:
     Player(const Vector2 pos, const Vector2 size);
     void Draw() const override;
+    void Update() override;
     const float GetVelocity() const;
 };
 
